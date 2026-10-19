@@ -72,6 +72,16 @@ Envoie ensuite à chaque forgeron **son** token, en message privé.
 
 Le site affiche `img/logo.png` dans l'en-tête et comme icône d'onglet. Dépose le logo du serveur à cet endroit (format carré). Sans fichier, l'en-tête affiche seulement le nom en texte.
 
+## Monnaie
+
+Les prix sont enregistrés en cuivre et affichés en pièces : **1 pièce d'argent = 100 pièces de cuivre** (125 s'affiche 1 argent 25 cuivre). À chaque vente, on peut noter ce que le client a donné (argent et cuivre) : le site calcule la monnaie à rendre ou ce qui reste dû.
+
+Si ta base en ligne a été créée avant l'ajout des pièces d'argent, lance une fois, dans `worker/`, **avant** le deploy :
+
+```bash
+npm run db:paiement
+```
+
 ## Ajouter ou renommer un forgeron
 
 1. Modifie la liste dans [`js/config.js`](js/config.js) (`LAFORGE_ACCOUNTS`) **et** dans [`worker/wrangler.toml`](worker/wrangler.toml) (`ACCOUNTS`).

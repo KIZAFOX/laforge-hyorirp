@@ -8,12 +8,39 @@
   const me = () => (Store.getSession() || {}).user || "";
 
   // Pièce de cuivre d'Edo (mon) : ronde, percée d'un trou carré.
-  const coin = () =>
-    '<svg class="mon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 .8a7.2 7.2 0 1 1 0 14.4A7.2 7.2 0 0 1 8 .8zM5.6 5.6v4.8h4.8V5.6z"/></svg><span class="sr-only"> pièces de cuivre</span>';
+  const MON =
+    '<svg class="mon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 .8a7.2 7.2 0 1 1 0 14.4A7.2 7.2 0 0 1 8 .8zM5.6 5.6v4.8h4.8V5.6z"/></svg>';
+  // Pièce d'argent d'Edo (ichibugin) : rectangulaire, avec un cartouche gravé.
+  const GIN =
+    '<svg class="gin" viewBox="0 0 11 16" aria-hidden="true"><rect x=".5" y=".5" width="10" height="15" rx="1.6"/><rect class="gin-mark" x="2.6" y="3" width="5.8" height="10" rx=".6"/></svg>';
+
+  const SILVER = 100; // 1 pièce d'argent = 100 pièces de cuivre
+
+  // Montant en cuivre affiché en pièces : 125 → 1 argent 25 cuivre.
+  function amount(n) {
+    n = Math.max(0, Math.round(Number(n) || 0));
+    const argent = Math.floor(n / SILVER);
+    const cuivre = n % SILVER;
+    const parts = [];
+    if (argent) parts.push(`<span class="amt">${argent}${GIN}<span class="sr-only"> pièce${argent > 1 ? "s" : ""} d'argent</span></span>`);
+    if (cuivre || !argent) parts.push(`<span class="amt">${cuivre}${MON}<span class="sr-only"> pièce${cuivre > 1 ? "s" : ""} de cuivre</span></span>`);
+    return `<span class="amount">${parts.join("")}</span>`;
+  }
+
+  // Version texte, pour les messages et l'export.
+  function amountText(n) {
+    n = Math.max(0, Math.round(Number(n) || 0));
+    const argent = Math.floor(n / SILVER);
+    const cuivre = n % SILVER;
+    const parts = [];
+    if (argent) parts.push(`${argent} argent`);
+    if (cuivre || !argent) parts.push(`${cuivre} cuivre`);
+    return parts.join(" ");
+  }
 
   function price(n) {
     if (n === null || n === undefined || n === "") return '<span class="price price-unset">à fixer</span>';
-    return `<span class="price">${n}${coin()}</span>`;
+    return `<span class="price">${amount(n)}</span>`;
   }
 
   function fmtDate(ts) {
@@ -201,5 +228,5 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
   }
 
-  window.UI = { esc, me, coin, price, fmtDate, seal, init, run, allowLoginPrompt, poll, toast };
+  window.UI = { esc, me, SILVER, amount, amountText, price, fmtDate, seal, init, run, allowLoginPrompt, poll, toast };
 })();

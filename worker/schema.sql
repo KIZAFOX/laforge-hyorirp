@@ -40,7 +40,9 @@ CREATE TABLE IF NOT EXISTS sales (
   vendeur TEXT NOT NULL,
   client  TEXT NOT NULL DEFAULT '',
   note    TEXT NOT NULL DEFAULT '',
-  total   INTEGER NOT NULL
+  total   INTEGER NOT NULL,           -- en cuivre (1 argent = 100 cuivre)
+  paid_argent INTEGER NOT NULL DEFAULT 0, -- pièces données par le client
+  paid_cuivre INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS sales_date ON sales(date DESC);
 CREATE INDEX IF NOT EXISTS sales_vendeur ON sales(vendeur);

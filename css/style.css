@@ -17,6 +17,7 @@
   --dou-light: #e0a36f;
   --shu: #a93226;
   --shu-deep: #8a271d;
+  --gin: #6b6e76;
 
   --font-ink: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
   --font-hand: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
@@ -238,6 +239,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 
 /* Pièce mon : la monnaie de cuivre d'Edo, ronde et percée d'un trou carré. */
 .mon { width: 0.78em; height: 0.78em; fill: var(--dou); flex: none; }
+/* Pièce d'argent ichibugin : rectangulaire, gris argent (neutre, hors palette). */
+.gin { width: 0.56em; height: 0.82em; fill: var(--gin); flex: none; }
+.gin .gin-mark { fill: none; stroke: rgba(255, 255, 255, 0.6); stroke-width: 1.1; }
+
+.amount { display: inline-flex; align-items: center; gap: 0.45em; white-space: nowrap; }
+.amt { display: inline-flex; align-items: center; gap: 0.18em; }
 
 .board-bar {
   display: flex;
@@ -309,6 +316,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .tag-name { font-weight: 500; }
 .tag .price { font-size: 36px; color: var(--washi); }
 .tag .mon { fill: var(--dou-light); }
+.tag .gin { fill: #d4d6dc; }
 .tag .price-unset { font-size: 20px; color: #d9d2c2; }
 .tag-note { font-size: 14px; color: #d9d2c2; }
 
@@ -455,6 +463,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .line-head { font-size: 13px; font-weight: 700; color: var(--muted); }
 .line-head span:nth-child(2), .line-head span:nth-child(3) { text-align: right; padding-right: 6px; }
 .form-error { margin: 0; color: var(--shu); font-weight: 500; }
+.pay-set { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 10px; }
+.pay-set legend { padding: 0; margin-bottom: 8px; }
+.pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pay-status { margin: 0; color: var(--sumi-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.pay-status strong { font-family: var(--font-ink); font-size: 20px; color: var(--sumi); }
+.pay-short, .pay-short strong { color: var(--shu); }
+.entry-pay { margin: 8px 0 0; font-size: 15px; color: var(--sumi-soft); }
 .slip-total {
   display: flex;
   align-items: baseline;

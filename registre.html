@@ -32,7 +32,7 @@
         </div>
         <fieldset class="lines-set">
           <legend>Articles vendus</legend>
-          <div class="line line-head" aria-hidden="true"><span>Article</span><span>Qté</span><span>Prix u.</span><span></span></div>
+          <div class="line line-head" aria-hidden="true"><span>Article</span><span>Qté</span><span>Cuivre/u.</span><span></span></div>
           <div class="lines" id="lines"></div>
           <button type="button" class="btn btn-quiet" id="add-line">Ajouter un article</button>
         </fieldset>
@@ -45,6 +45,20 @@
           <span>Total</span>
           <strong id="f-total">0</strong>
         </div>
+        <fieldset class="pay-set">
+          <legend>Le client a donné <span class="optional">(facultatif)</span></legend>
+          <div class="pay-grid">
+            <div class="field">
+              <label for="f-argent">Pièces d'argent</label>
+              <input id="f-argent" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
+            </div>
+            <div class="field">
+              <label for="f-cuivre">Pièces de cuivre</label>
+              <input id="f-cuivre" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+          <p class="pay-status" id="pay-status" aria-live="polite"></p>
+        </fieldset>
         <button class="btn btn-primary btn-wide" type="submit">Inscrire au registre</button>
       </form>
 

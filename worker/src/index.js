@@ -193,7 +193,7 @@ async function savePrices(db, body, by) {
 async function listSales(db, url) {
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 2000, 1), 10000);
   const [sales, lines] = await db.batch([
-    db.prepare("SELECT id, date, vendeur, client, note, total FROM sales ORDER BY date DESC LIMIT ?").bind(limit),
+    db.prepare("SELECT id, date, vendeur, client, note, total, paid_argent, paid_cuivre FROM sales ORDER BY date DESC LIMIT ?").bind(limit),
     db
       .prepare(
         "SELECT sale_id, name, qty, unit FROM sale_lines WHERE sale_id IN (SELECT id FROM sales ORDER BY date DESC LIMIT ?) ORDER BY id"
@@ -205,7 +205,11 @@ async function listSales(db, url) {
     if (!bySale.has(l.sale_id)) bySale.set(l.sale_id, []);
     bySale.get(l.sale_id).push({ name: l.name, qty: l.qty, unit: l.unit });
   }
-  return sales.results.map((s) => ({ ...s, lignes: bySale.get(s.id) || [] }));
+  return sales.results.map(({ paid_argent, paid_cuivre, ...s }) => ({
+    ...s,
+    paiement: { argent: paid_argent, cuivre: paid_cuivre },
+    lignes: bySale.get(s.id) || [],
+  }));
 }
 
 async function addSale(db, body, vendeur) {
@@ -218,6 +222,10 @@ async function addSale(db, body, vendeur) {
     qty: int(l.qty, 1, 9999, "quantité"),
     unit: int(l.unit, 0, 1000000, "prix unitaire"),
   }));
+  // Paiement facultatif : pièces données par le client (1 argent = 100 cuivre)
+  const p = body.paiement || {};
+  const coins = (v, field) => (v === undefined || v === null || v === "" ? 0 : int(v, 0, 1000000, field));
+  const paiement = { argent: coins(p.argent, "pièces d'argent"), cuivre: coins(p.cuivre, "pièces de cuivre") };
   const sale = {
     id: crypto.randomUUID(),
     date: Date.now(),
@@ -225,12 +233,13 @@ async function addSale(db, body, vendeur) {
     client,
     note,
     total: lignes.reduce((s, l) => s + l.qty * l.unit, 0),
+    paiement,
     lignes,
   };
   await db.batch([
     db
-      .prepare("INSERT INTO sales (id, date, vendeur, client, note, total) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(sale.id, sale.date, vendeur, client, note, sale.total),
+      .prepare("INSERT INTO sales (id, date, vendeur, client, note, total, paid_argent, paid_cuivre) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(sale.id, sale.date, vendeur, client, note, sale.total, paiement.argent, paiement.cuivre),
     ...lignes.map((l) =>
       db.prepare("INSERT INTO sale_lines (sale_id, name, qty, unit) VALUES (?, ?, ?, ?)").bind(sale.id, l.name, l.qty, l.unit)
     ),

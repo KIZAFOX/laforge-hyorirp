@@ -6,6 +6,7 @@
     "dev": "wrangler dev",
     "db:local": "wrangler d1 execute laforge --local --file=schema.sql",
     "db:remote": "wrangler d1 execute laforge --remote --file=schema.sql",
+    "db:paiement": "wrangler d1 execute laforge --remote --file=migrations/001-paiement.sql",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

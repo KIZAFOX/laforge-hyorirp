@@ -1,5 +1,5 @@
 (function () {
-  const { esc, fmtDate, coin, seal } = UI;
+  const { esc, fmtDate, amount, amountText, seal } = UI;
   const store = Store.create();
   UI.init("registre", store);
 
@@ -39,7 +39,7 @@
             `<optgroup label="${esc(c.name)}">${c.items
               .map((it) => {
                 const key = c.id + "/" + it.id;
-                const p = it.price != null ? ` (${it.price})` : " (prix à fixer)";
+                const p = it.price != null ? ` (${amountText(it.price)})` : " (prix à fixer)";
                 return `<option value="${esc(key)}" ${key === selected ? "selected" : ""}>${esc(it.name)}${p}</option>`;
               })
               .join("")}</optgroup>`
@@ -60,7 +60,7 @@
             : `<select data-i="${i}" data-f="key" aria-label="Article ${i + 1}">${itemOptions(l.key)}</select>`
         }
         <input data-i="${i}" data-f="qty" type="number" min="1" step="1" inputmode="numeric" value="${esc(l.qty)}" aria-label="Quantité de l'article ${i + 1}" />
-        <input data-i="${i}" data-f="unit" type="number" min="0" step="1" inputmode="numeric" value="${esc(l.unit)}" aria-label="Prix unitaire de l'article ${i + 1}" placeholder="0" />
+        <input data-i="${i}" data-f="unit" type="number" min="0" step="1" inputmode="numeric" value="${esc(l.unit)}" aria-label="Prix unitaire en cuivre de l'article ${i + 1}" placeholder="0" />
         <button type="button" class="btn btn-quiet btn-danger btn-x" data-del="${i}" aria-label="Retirer l'article ${i + 1}" ${lines.length === 1 ? "disabled" : ""}>×</button>
       </div>`
       )
@@ -69,9 +69,29 @@
   }
 
   const lineTotal = (l) => (Math.max(0, Math.round(Number(l.qty))) || 0) * (Math.max(0, Math.round(Number(l.unit))) || 0);
+  const formTotal = () => lines.reduce((s, l) => s + lineTotal(l), 0);
+  const coins = (id) => Math.max(0, Math.round(Number($(id).value))) || 0;
+  const paidTotal = () => coins("f-argent") * UI.SILVER + coins("f-cuivre");
+
   function renderTotal() {
-    $("f-total").innerHTML = `${lines.reduce((s, l) => s + lineTotal(l), 0)}${coin()}`;
+    $("f-total").innerHTML = amount(formTotal());
+    renderPayment();
   }
+
+  // Monnaie à rendre (ou reste à payer) selon les pièces données par le client.
+  function renderPayment() {
+    const total = formTotal();
+    const paid = paidTotal();
+    const out = $("pay-status");
+    out.classList.remove("pay-short");
+    if (!paid) out.innerHTML = "1 pièce d'argent vaut 100 pièces de cuivre.";
+    else if (paid >= total) out.innerHTML = `Monnaie à rendre : <strong>${amount(paid - total)}</strong>`;
+    else {
+      out.classList.add("pay-short");
+      out.innerHTML = `Reste à payer : <strong>${amount(total - paid)}</strong>`;
+    }
+  }
+  ["f-argent", "f-cuivre"].forEach((id) => $(id).addEventListener("input", renderPayment));
 
   linesEl.addEventListener("change", (e) => {
     const t = e.target;
@@ -128,6 +148,7 @@
     const sale = {
       client: $("f-client").value.trim(),
       note: $("f-note").value.trim(),
+      paiement: { argent: coins("f-argent"), cuivre: coins("f-cuivre") },
       lignes: valid.map((l) => ({
         name: l.name.trim(),
         qty: Math.round(Number(l.qty)),
@@ -142,8 +163,10 @@
       lines = [newLine()];
       $("f-client").value = "";
       $("f-note").value = "";
+      $("f-argent").value = "";
+      $("f-cuivre").value = "";
       renderLines();
-      UI.toast(`Vente de ${saved.total} pièces inscrite au registre`);
+      UI.toast(`Vente de ${amountText(saved.total)} inscrite au registre`);
       await loadSales();
     } catch (err) {
       showFormError("La vente n'a pas été inscrite. " + err.message);
@@ -202,7 +225,7 @@
       ? `
         <div class="account-total">
           <span class="account-label">${fltVendeur.value || fltSearch.value ? "Total filtré" : "Total du registre"}</span>
-          <strong>${grand}${coin()}</strong>
+          <strong>${amount(grand)}</strong>
           <span class="account-sub">${list.length} vente${list.length > 1 ? "s" : ""}</span>
         </div>
         <ul class="account-list">
@@ -213,7 +236,7 @@
             <li class="account">
               ${seal(v)}
               <span class="account-name">${esc(v)}</span>
-              <strong>${d.total}${coin()}</strong>
+              <strong>${amount(d.total)}</strong>
               <span class="account-sub">${d.n} vente${d.n > 1 ? "s" : ""}</span>
             </li>`
             )
@@ -246,17 +269,35 @@
               <time datetime="${new Date(s.date).toISOString()}">${fmtDate(s.date)}</time>
             </p>
             <ul class="entry-lines">
-              ${s.lignes.map((l) => `<li><span>${l.qty} × ${esc(l.name)}</span><span class="entry-unit">${l.unit} l'unité</span></li>`).join("")}
+              ${s.lignes.map((l) => `<li><span>${l.qty} × ${esc(l.name)}</span><span class="entry-unit">${amountText(l.unit)} l'unité</span></li>`).join("")}
             </ul>
+            ${paymentLine(s)}
             ${s.note ? `<p class="entry-note">${esc(s.note)}</p>` : ""}
           </div>
           <div class="entry-side">
-            <span class="entry-total">${s.total}${coin()}</span>
+            <span class="entry-total">${amount(s.total)}</span>
             ${s.vendeur === UI.me() ? `<button class="btn btn-quiet btn-danger" data-del-sale="${esc(s.id)}" aria-label="Effacer la vente de ${esc(s.vendeur)} du ${fmtDate(s.date)}">Effacer</button>` : ""}
           </div>
         </li>`
         )
         .join("")}</ol>`;
+  }
+
+  const paidOf = (s) => (s.paiement ? s.paiement.argent * UI.SILVER + s.paiement.cuivre : 0);
+
+  function paymentLine(s) {
+    const paid = paidOf(s);
+    if (!paid) return "";
+    const given = [s.paiement.argent ? `${s.paiement.argent} argent` : "", s.paiement.cuivre ? `${s.paiement.cuivre} cuivre` : ""]
+      .filter(Boolean)
+      .join(" et ");
+    const rest =
+      paid >= s.total
+        ? paid > s.total
+          ? `, rendu ${amountText(paid - s.total)}`
+          : ""
+        : `, <span class="pay-short">reste dû ${amountText(s.total - paid)}</span>`;
+    return `<p class="entry-pay">Payé ${given}${rest}</p>`;
   }
 
   $("sales").addEventListener("click", async (e) => {
@@ -271,7 +312,7 @@
     const b = e.target.closest("button[data-del-sale]");
     if (!b) return;
     const s = sales.find((x) => x.id === b.dataset.delSale);
-    if (!s || !confirm(`Effacer la vente de ${s.vendeur} du ${fmtDate(s.date)} (${s.total} pièces) ?`)) return;
+    if (!s || !confirm(`Effacer la vente de ${s.vendeur} du ${fmtDate(s.date)} (${amountText(s.total)}) ?`)) return;
     b.disabled = true;
     try {
       await UI.run(() => store.deleteSale(s.id));
@@ -290,10 +331,22 @@
   $("export").addEventListener("click", () => {
     const list = filtered();
     if (!list.length) return UI.toast("Rien à télécharger avec ce filtre");
-    const rows = [["Date", "Vendeur", "Client", "Articles", "Total", "Remarque"]];
-    list.forEach((s) =>
-      rows.push([fmtDate(s.date), s.vendeur, s.client, s.lignes.map((l) => `${l.qty} x ${l.name} (${l.unit})`).join(" + "), s.total, s.note])
-    );
+    const rows = [["Date", "Vendeur", "Client", "Articles", "Total (cuivre)", "Total", "Payé argent", "Payé cuivre", "Rendu (cuivre)", "Remarque"]];
+    list.forEach((s) => {
+      const paid = paidOf(s);
+      rows.push([
+        fmtDate(s.date),
+        s.vendeur,
+        s.client,
+        s.lignes.map((l) => `${l.qty} x ${l.name} (${l.unit})`).join(" + "),
+        s.total,
+        amountText(s.total),
+        s.paiement ? s.paiement.argent : 0,
+        s.paiement ? s.paiement.cuivre : 0,
+        paid ? paid - s.total : "",
+        s.note,
+      ]);
+    });
     const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));

@@ -120,7 +120,7 @@
   function historyBlock() {
     const h = prices.history || [];
     if (!h.length) return "";
-    const p = (v) => (v === null || v === undefined ? "à fixer" : v);
+    const p = (v) => (v === null || v === undefined ? "à fixer" : UI.amountText(v));
     const line = (e) => {
       if (e.kind === "ajout") return `<strong>${esc(e.item)}</strong> ajouté à ${p(e.new_price)}`;
       if (e.kind === "retrait") return `<strong>${esc(e.item)}</strong> retiré de la liste`;
@@ -148,7 +148,7 @@
   function renderEdit() {
     root.innerHTML = `
       <div class="board-bar">
-        <p class="meta">Mode édition. Laisse le prix vide s'il n'est pas encore fixé. Les lignes sans nom sont ignorées.</p>
+        <p class="meta">Mode édition. Les prix s'écrivent en cuivre (1 argent = 100 cuivre). Laisse le prix vide s'il n'est pas encore fixé. Les lignes sans nom sont ignorées.</p>
       </div>
       <div class="edit-list">
         ${draft.categories.map(editCat).join("")}
@@ -185,13 +185,13 @@
           <button class="btn btn-quiet btn-danger" data-act="del-cat" data-c="${ci}">Supprimer la catégorie</button>
         </div>
         <div class="edit-items" role="group" aria-label="Articles de ${esc(c.name)}">
-          <div class="edit-item edit-item-head" aria-hidden="true"><span>Article</span><span>Prix</span><span>Remarque</span><span></span></div>
+          <div class="edit-item edit-item-head" aria-hidden="true"><span>Article</span><span>Prix en cuivre</span><span>Remarque</span><span></span></div>
           ${c.items
             .map(
               (it, ii) => `
             <div class="edit-item">
               <input data-c="${ci}" data-i="${ii}" data-f="name" value="${esc(it.name)}" aria-label="Nom de l'article" placeholder="Nom de l'article" />
-              <input data-c="${ci}" data-i="${ii}" data-f="price" type="number" min="0" step="1" inputmode="numeric" value="${it.price ?? ""}" aria-label="Prix de ${esc(it.name)}" placeholder="à fixer" />
+              <input data-c="${ci}" data-i="${ii}" data-f="price" type="number" min="0" step="1" inputmode="numeric" value="${it.price ?? ""}" aria-label="Prix de ${esc(it.name)} en pièces de cuivre" placeholder="à fixer" />
               <input data-c="${ci}" data-i="${ii}" data-f="note" value="${esc(it.note)}" aria-label="Remarque sur ${esc(it.name)}" placeholder="Remarque" />
               <button class="btn btn-quiet btn-danger" data-act="del-item" data-c="${ci}" data-i="${ii}" aria-label="Retirer ${esc(it.name)}">Retirer</button>
             </div>`

@@ -10,7 +10,7 @@ database_id = "14a97acd-db95-48f1-88c4-8a2536a1925c"
 
 [vars]
 # Adresse du site GitHub Pages autorisée à appeler l'API ("*" = toutes)
-ALLOWED_ORIGIN = "*"
+ALLOWED_ORIGIN = "https://kizafox.github.io"
 # Les comptes des forgerons (séparés par des virgules)
 ACCOUNTS = "Kamon,Asahi,Kurogane"
 
