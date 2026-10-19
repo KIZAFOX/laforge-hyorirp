@@ -906,3 +906,11 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 .client-hint:has(.btn-chip) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .btn-chip { min-height: 36px; padding: 0 12px; font-size: 14px; border-color: var(--rule-strong); }
 @media (pointer: coarse) { .btn-chip { min-height: 44px; } }
+
+/* Variantes d'articles (coloris, modèles) */
+.tag-variants { font-size: 13px; color: #d9d2c2; }
+.row-variants { display: block; font-size: 13px; color: var(--muted); }
+.edit-variants { grid-column: 1 / 4; }
+@media (max-width: 640px) {
+  .edit-variants { grid-column: 1 / -1; }
+}

@@ -12,9 +12,12 @@
         note: "Réservé aux samouraïs, qualité excellente uniquement.",
         featured: true,
         items: [
-          { id: "armure-complete", name: "Armure complète", price: 100, note: "" },
-          { id: "piece-armure", name: "Pièce d'armure (au choix)", price: 25, note: "" },
-          { id: "katana", name: "Katana", price: 85, note: "" },
+          { id: "armure-complete", name: "Armure complète", price: 100, note: "", variants: "Bleu,Noir,Rouge,Brun" },
+          { id: "casque", name: "Casque", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
+          { id: "plastron", name: "Plastron", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
+          { id: "jambieres", name: "Jambières", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
+          { id: "bottes", name: "Bottes", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
+          { id: "katana", name: "Katana", price: 85, note: "", variants: "Neon Blade,Black Ice" },
           { id: "reparation-samourai", name: "Réparation", price: null, note: "Prix pas encore fixé" },
         ],
       },
@@ -172,15 +175,23 @@
         return order;
       },
       async updateOrder(id, change) {
-        return editOrder(id, (o) => (o.deliveredAt = change.delivered ? Date.now() : null));
+        return editOrder(id, (o) => {
+          if (change.delivered !== undefined) o.deliveredAt = change.delivered ? Date.now() : null;
+          if (change.client !== undefined) o.client = change.client;
+          if (change.note !== undefined) o.note = change.note;
+          if (change.lignes) {
+            const done = new Map(o.lignes.map((l) => [l.id, l.done]));
+            o.lignes = change.lignes.map((l) => ({
+              ...l,
+              id: done.has(l.id) ? l.id : uid(),
+              done: done.has(l.id) ? Math.min(l.qty, done.get(l.id)) : 0,
+            }));
+          }
+        });
       },
       async deleteOrder(id) {
-        const user = who();
-        const all = read(LS.orders, []);
-        const o = all.find((x) => x.id === id);
-        if (o && o.createdBy !== user)
-          throw Object.assign(new Error("Seul le forgeron qui a créé la commande peut la supprimer."), { status: 403 });
-        write(LS.orders, all.filter((x) => x.id !== id));
+        who();
+        write(LS.orders, read(LS.orders, []).filter((x) => x.id !== id));
       },
       async stepLine(id, lineId, change) {
         return editOrder(id, (o) => {
@@ -197,12 +208,7 @@
         );
       },
       async deletePayment(id, paymentId) {
-        const user = who();
-        return editOrder(id, (o) => {
-          const p = o.paiements.find((x) => x.id === paymentId);
-          if (p && p.by !== user) throw Object.assign(new Error("Tu ne peux retirer que les versements que tu as notés."), { status: 403 });
-          o.paiements = o.paiements.filter((x) => x.id !== paymentId);
-        });
+        return editOrder(id, (o) => (o.paiements = o.paiements.filter((x) => x.id !== paymentId)));
       },
     };
 

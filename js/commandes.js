@@ -172,8 +172,13 @@
 
   let draft = null;
 
-  function openNew() {
-    draft = { lignes: [{ name: "", qty: 1, unit: "" }] };
+  // Sans argument : nouvelle commande. Avec une commande : on la modifie (lignes, client, remarque).
+  function openNew(editing) {
+    // Une ligne déjà enregistrée est remise sur son choix de la liste si son nom y figure.
+    const keyFor = (name) => UI.articleByName(prices, name)?.key || "autre";
+    draft = editing
+      ? { id: editing.id, lignes: editing.lignes.map((l) => ({ id: l.id, key: keyFor(l.name), name: l.name, qty: l.qty, unit: l.unit })) }
+      : { lignes: [newLine()] };
     let dlg = $("new-dialog");
     if (!dlg) {
       dlg = document.createElement("dialog");
@@ -185,7 +190,8 @@
     }
     dlg.innerHTML = `
       <form class="detail" id="new-form" novalidate>
-        <h2 id="new-title">Nouvelle commande</h2>
+        <h2 id="new-title">${editing ? `Modifier la commande de ${esc(editing.client)}` : "Nouvelle commande"}</h2>
+        ${editing ? `<p class="detail-empty">Les pièces déjà faites et les versements notés sont conservés.</p>` : ""}
         <div class="field">
           <label for="n-client">Client</label>
           <input id="n-client" maxlength="60" required placeholder="Pour qui est la commande" autocomplete="off" />
@@ -198,14 +204,14 @@
           <button type="button" class="btn btn-quiet" data-add-line>Ajouter une ligne</button>
         </fieldset>
         <div class="slip-total"><span>Total de la commande</span><strong id="n-total">0</strong></div>
-        <fieldset class="pay-set">
+        ${editing ? "" : `<fieldset class="pay-set">
           <legend>Déjà payé à la commande <span class="optional">(facultatif)</span></legend>
           <label class="check"><input type="checkbox" id="n-full" /> Payée en entier dès maintenant</label>
           <div class="pay-grid">
             <div class="field"><label for="n-argent">Pièces d'argent</label><input id="n-argent" type="number" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
             <div class="field"><label for="n-cuivre">Pièces de cuivre</label><input id="n-cuivre" type="number" min="0" step="1" inputmode="numeric" placeholder="0" /></div>
           </div>
-        </fieldset>
+        </fieldset>`}
         <div class="field">
           <label for="n-note">Remarque <span class="optional">(facultatif)</span></label>
           <textarea id="n-note" maxlength="300" rows="2" placeholder="ex : livraison au port, couleurs au choix"></textarea>
@@ -213,21 +219,31 @@
         <p class="form-error" id="n-error" role="alert" hidden></p>
         <div class="row-end">
           <button type="button" class="btn btn-quiet" data-cancel>Annuler</button>
-          <button class="btn btn-primary" type="submit">Créer la commande</button>
+          <button class="btn btn-primary" type="submit">${editing ? "Enregistrer les modifications" : "Créer la commande"}</button>
         </div>
       </form>`;
+    if (editing) {
+      $("n-client").value = editing.client;
+      $("n-note").value = editing.note || "";
+    }
     renderNewLines();
     UI.clientField($("n-client"), $("n-client-hint"), knownClients).refresh();
     dlg.showModal();
     $("n-client").focus();
   }
 
+  const newLine = () => ({ key: "", name: "", qty: 1, unit: "" });
+
   function renderNewLines() {
     $("n-lines").innerHTML = draft.lignes
       .map(
         (l, i) => `
       <div class="nline">
-        <input data-i="${i}" data-f="name" list="item-names" value="${esc(l.name)}" maxlength="100" aria-label="Article ${i + 1}" placeholder="ex : Katana Black Ice" />
+        ${
+          l.key === "autre"
+            ? `<input data-i="${i}" data-f="name" list="item-names" value="${esc(l.name)}" maxlength="100" aria-label="Article ${i + 1}" placeholder="Nom de l'article" />`
+            : `<select data-i="${i}" data-f="key" aria-label="Article ${i + 1}">${UI.articleOptions(prices, l.key)}</select>`
+        }
         <input data-i="${i}" data-f="qty" type="number" min="1" step="1" inputmode="numeric" value="${esc(l.qty)}" aria-label="Quantité de l'article ${i + 1}" />
         <input data-i="${i}" data-f="unit" type="number" min="0" step="1" inputmode="numeric" value="${esc(l.unit)}" aria-label="Prix unitaire en cuivre de l'article ${i + 1}" placeholder="0" />
         <button type="button" class="btn btn-quiet btn-danger btn-x" data-del-line="${i}" aria-label="Retirer la ligne ${i + 1}" ${draft.lignes.length === 1 ? "disabled" : ""}>×</button>
@@ -242,7 +258,7 @@
 
   function renderNewTotal() {
     $("n-total").innerHTML = amount(draftTotal());
-    if ($("n-full").checked) fillFull();
+    if ($("n-full")?.checked) fillFull();
   }
 
   function fillFull() {
@@ -261,6 +277,17 @@
       }
       if (t.dataset.i === undefined) return;
       const l = draft.lignes[+t.dataset.i];
+      if (t.dataset.f === "key") {
+        // Choix dans la liste : nom et prix viennent de l'article
+        l.key = t.value;
+        const a = l.key && l.key !== "autre" ? UI.findArticle(prices, l.key) : null;
+        l.name = a ? a.name : "";
+        l.unit = a && a.price != null ? a.price : "";
+        renderNewLines();
+        return dlg
+          .querySelector(l.key === "autre" ? `[data-i="${t.dataset.i}"][data-f="name"]` : `[data-i="${t.dataset.i}"][data-f="qty"]`)
+          ?.focus();
+      }
       l[t.dataset.f] = t.value;
       if (t.dataset.f === "name" && (l.unit === "" || l.autoUnit)) {
         const u = guessUnit(t.value);
@@ -274,16 +301,16 @@
     dlg.addEventListener("click", (e) => {
       if (e.target === dlg || e.target.closest("[data-cancel]")) return dlg.close();
       if (e.target.closest("[data-add-line]")) {
-        draft.lignes.push({ name: "", qty: 1, unit: "" });
+        draft.lignes.push(newLine());
         renderNewLines();
-        return dlg.querySelector(`[data-i="${draft.lignes.length - 1}"][data-f="name"]`).focus();
+        return dlg.querySelector(`[data-i="${draft.lignes.length - 1}"]`).focus();
       }
       const del = e.target.closest("[data-del-line]");
       if (del) {
         const i = +del.dataset.delLine;
         draft.lignes.splice(i, 1);
         renderNewLines();
-        dlg.querySelector(`[data-i="${Math.max(0, i - 1)}"][data-f="name"]`).focus();
+        dlg.querySelector(`[data-i="${Math.max(0, i - 1)}"]`).focus();
       }
     });
     dlg.addEventListener("submit", async (e) => {
@@ -298,10 +325,32 @@
       const client = $("n-client").value.trim();
       const lignes = draft.lignes.filter((l) => l.name.trim());
       if (!client) return show("Indique le nom du client.", $("n-client"));
-      if (!lignes.length) return show("Ajoute au moins une pièce à fabriquer.", dlg.querySelector('[data-f="name"]'));
+      if (!lignes.length) return show("Ajoute au moins une pièce à fabriquer.", dlg.querySelector('[data-i="0"]'));
       if (lignes.some((l) => num(l.qty) < 1)) return show("Chaque quantité doit être d'au moins 1.");
       const btn = dlg.querySelector('button[type="submit"]');
       btn.disabled = true;
+      if (draft.id) {
+        btn.textContent = "Enregistrement…";
+        try {
+          const o = await UI.run(() =>
+            store.updateOrder(draft.id, {
+              client,
+              note: $("n-note").value.trim(),
+              lignes: lignes.map((l) => ({ id: l.id, name: l.name.trim(), qty: num(l.qty), unit: num(l.unit) })),
+            })
+          );
+          replaceOrder(o);
+          dlg.close();
+          renderList();
+          if (openId === o.id) renderDetail("edit");
+          UI.toast(`Commande de ${o.client} modifiée`);
+        } catch (ex) {
+          show("Les modifications n'ont pas été enregistrées. " + ex.message);
+          btn.disabled = false;
+          btn.textContent = "Enregistrer les modifications";
+        }
+        return;
+      }
       btn.textContent = "Création…";
       try {
         const o = await UI.run(() =>
@@ -325,7 +374,7 @@
     });
   }
 
-  $("new-order").addEventListener("click", openNew);
+  $("new-order").addEventListener("click", () => openNew());
 
   // ---------- Fiche de suivi ----------
   let openId = null;
@@ -368,7 +417,6 @@
     const st = status(o);
     const pMade = pct(made, pieces);
     const pPaid = pct(paid, total);
-    const mine = o.createdBy === UI.me();
 
     dlg.innerHTML = `
       <div class="detail">
@@ -431,7 +479,7 @@
               <li>
                 <span class="pay-amt">${amount(p.argent * UI.SILVER + p.cuivre)}</span>
                 <span class="pay-info">${fmtDate(p.at)}, noté par ${esc(p.by)}${p.note ? ` · ${esc(p.note)}` : ""}<br /><span class="meta">${p.argent} argent et ${p.cuivre} cuivre donnés</span></span>
-                ${p.by === UI.me() ? `<button type="button" class="btn btn-quiet btn-danger" data-del-pay="${p.id}" aria-label="Retirer le versement du ${fmtDate(p.at)}">Retirer</button>` : ""}
+                <button type="button" class="btn btn-quiet btn-danger" data-del-pay="${p.id}" aria-label="Retirer le versement du ${fmtDate(p.at)}">Retirer</button>
               </li>`
                 )
                 .join("")}</ol>`
@@ -460,7 +508,8 @@
         <p class="detail-empty">${o.deliveredAt ? `Livrée le ${fmtDate(o.deliveredAt)}.` : "Pas encore livrée."}</p>
 
         <div class="row-end row-wrap">
-          ${mine ? `<button type="button" class="btn btn-quiet btn-danger" data-del-order>Supprimer la commande</button>` : ""}
+          <button type="button" class="btn btn-quiet btn-danger" data-del-order>Supprimer la commande</button>
+          <button type="button" class="btn" data-edit data-key="edit">Modifier la commande</button>
           <button type="button" class="btn" data-deliver data-key="deliver">${o.deliveredAt ? "Remettre en cours" : "Marquer comme livrée"}</button>
           <button type="button" class="btn btn-primary" data-close>Fermer</button>
         </div>
@@ -530,6 +579,7 @@
           UI.toast(o.deliveredAt ? "Commande remise en cours" : "Commande marquée comme livrée")
         );
       }
+      if (e.target.closest("[data-edit]")) return openNew(o);
       if (e.target.closest("[data-del-order]")) {
         if (!confirm(`Supprimer la commande de ${o.client} ? Le suivi et les versements notés seront perdus.`)) return;
         try {
@@ -631,7 +681,7 @@
   }
 
   window.addEventListener("hashchange", openFromHash);
-  const dialogFocusFirstLine = () => $("new-dialog").querySelector('[data-i="0"][data-f="name"]').focus();
+  const dialogFocusFirstLine = () => $("new-dialog").querySelector('[data-i="0"]').focus();
 
   renderList();
   loadPrices()

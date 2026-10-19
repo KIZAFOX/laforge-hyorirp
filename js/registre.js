@@ -29,29 +29,7 @@
     return { key: "", name: "", qty: 1, unit: "" };
   }
 
-  function findItem(key) {
-    for (const c of prices.categories) for (const it of c.items) if (c.id + "/" + it.id === key) return { cat: c, item: it };
-    return null;
-  }
-
-  function itemOptions(selected) {
-    return (
-      `<option value="">Choisir un article</option>` +
-      prices.categories
-        .map(
-          (c) =>
-            `<optgroup label="${esc(c.name)}">${c.items
-              .map((it) => {
-                const key = c.id + "/" + it.id;
-                const p = it.price != null ? ` (${amountText(it.price)})` : " (prix à fixer)";
-                return `<option value="${esc(key)}" ${key === selected ? "selected" : ""}>${esc(it.name)}${p}</option>`;
-              })
-              .join("")}</optgroup>`
-        )
-        .join("") +
-      `<option value="autre" ${selected === "autre" ? "selected" : ""}>Autre article (à écrire)</option>`
-    );
-  }
+  const itemOptions = (selected) => UI.articleOptions(prices, selected);
 
   function renderLines() {
     linesEl.innerHTML = lines
@@ -103,9 +81,9 @@
     const i = +t.dataset.i;
     const l = lines[i];
     l.key = t.value;
-    const found = l.key && l.key !== "autre" ? findItem(l.key) : null;
-    l.name = found ? `${found.item.name} (${found.cat.name})` : "";
-    l.unit = found && found.item.price != null ? found.item.price : "";
+    const found = l.key && l.key !== "autre" ? UI.findArticle(prices, l.key) : null;
+    l.name = found ? `${found.name} (${found.cat})` : "";
+    l.unit = found && found.price != null ? found.price : "";
     renderLines();
     const next = linesEl.querySelector(l.key === "autre" ? `[data-i="${i}"][data-f="name"]` : `[data-i="${i}"][data-f="qty"]`);
     next?.focus();

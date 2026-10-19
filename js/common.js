@@ -230,6 +230,55 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
   }
 
+  // ---------- Articles et variantes ----------
+  // Un article à variantes (coloris, modèles) donne un choix par variante : « Casque Rouge ».
+  const variantsOf = (it) =>
+    String(it.variants || "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+
+  function articles(prices) {
+    const out = [];
+    for (const c of (prices && prices.categories) || [])
+      for (const it of c.items) {
+        const vs = variantsOf(it);
+        if (vs.length)
+          vs.forEach((v) => out.push({ key: `${c.id}/${it.id}/${v}`, group: `${it.name} (${c.name})`, name: `${it.name} ${v}`, price: it.price, cat: c.name }));
+        else out.push({ key: `${c.id}/${it.id}`, group: c.name, name: it.name, price: it.price, cat: c.name });
+      }
+    return out;
+  }
+
+  function articleOptions(prices, selected) {
+    const groups = new Map();
+    for (const a of articles(prices)) {
+      if (!groups.has(a.group)) groups.set(a.group, []);
+      groups.get(a.group).push(a);
+    }
+    return (
+      `<option value="">Choisir un article</option>` +
+      [...groups]
+        .map(
+          ([g, list]) =>
+            `<optgroup label="${esc(g)}">${list
+              .map(
+                (a) =>
+                  `<option value="${esc(a.key)}" ${a.key === selected ? "selected" : ""}>${esc(a.name)}${
+                    a.price != null ? ` (${esc(amountText(a.price))})` : " (prix à fixer)"
+                  }</option>`
+              )
+              .join("")}</optgroup>`
+        )
+        .join("") +
+      `<option value="autre" ${selected === "autre" ? "selected" : ""}>Autre article (à écrire)</option>`
+    );
+  }
+
+  const findArticle = (prices, key) => articles(prices).find((a) => a.key === key) || null;
+  // Retrouve le choix correspondant à un nom déjà enregistré (« casque rouge » → Casque Rouge)
+  const articleByName = (prices, name) => articles(prices).find((a) => a.name.toLocaleLowerCase("fr") === String(name).trim().toLocaleLowerCase("fr")) || null;
+
   // ---------- Clients ----------
   // Pas de fichier clients à tenir : on les retrouve dans les ventes et les commandes.
   // « kenji » et « Kenji » sont le même client.
@@ -332,5 +381,6 @@
   window.UI = {
     esc, me, SILVER, amount, amountText, price, fmtDate, seal, init, run, allowLoginPrompt, poll, toast,
     clientKey, clientsFrom, clientField, clientLink, salePaid, orderTotal, orderPaid,
+    variantsOf, articles, articleOptions, findArticle, articleByName,
   };
 })();

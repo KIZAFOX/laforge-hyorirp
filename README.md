@@ -88,12 +88,22 @@ npm run db:paiement
 
 ## Commandes
 
-La page **Commandes** (`commandes.html`) sert aux grosses commandes à fabriquer : on coche les pièces faites ligne par ligne (barre et % d'avancement) et on note chaque versement du client jusqu'au paiement complet. Tous les forgerons peuvent avancer une commande et noter un versement ; seul celui qui l'a créée peut la supprimer, et chacun ne peut retirer que ses propres versements.
+La page **Commandes** (`commandes.html`) sert aux grosses commandes à fabriquer : on coche les pièces faites ligne par ligne (barre et % d'avancement) et on note chaque versement du client jusqu'au paiement complet. Les trois forgerons ont les mêmes droits sur toutes les commandes : avancer la fabrication, noter ou retirer un versement, modifier les lignes, le client ou la remarque, marquer comme livrée et supprimer. Quand on modifie une ligne, les pièces déjà faites sont gardées.
 
 Sur une base en ligne créée avant cette page, lance une fois, dans `worker/`, **avant** le deploy :
 
 ```bash
 npm run db:commandes
+```
+
+## Coloris et modèles
+
+Un article peut avoir des variantes (coloris des armures, modèles de katana). En mode édition des prix, écris-les dans le champ « Coloris ou modèles », séparées par des virgules. Dans le registre et les commandes, la liste propose alors directement « Casque Rouge », « Katana Black Ice », etc.
+
+Sur une base en ligne créée avant les variantes, lance une fois, dans `worker/`, **avant** le deploy :
+
+```bash
+npm run db:variantes
 ```
 
 ## Clients

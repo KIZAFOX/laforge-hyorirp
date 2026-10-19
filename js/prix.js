@@ -80,6 +80,7 @@
                   <li class="tag">
                     <span class="tag-name">${esc(it.name)}</span>
                     ${price(it.price)}
+                    ${variantsLine(it, "tag-variants")}
                     ${it.note ? `<span class="tag-note">${esc(it.note)}</span>` : ""}
                   </li>`
                     )
@@ -89,6 +90,12 @@
           </div>
         </div>
       </section>`;
+  }
+
+  // Coloris ou modèles proposés : « Bleu · Noir · Rouge · Brun »
+  function variantsLine(it, cls) {
+    const vs = UI.variantsOf(it);
+    return vs.length ? `<span class="${cls}">Au choix : ${vs.map(esc).join(" · ")}</span>` : "";
   }
 
   // Catégorie ordinaire : une page de livre de comptes avec points de conduite.
@@ -105,7 +112,7 @@
                   .map(
                     (it) => `
                 <li>
-                  <span class="row-name">${esc(it.name)}${it.note ? `<small>${esc(it.note)}</small>` : ""}</span>
+                  <span class="row-name">${esc(it.name)}${variantsLine(it, "row-variants")}${it.note ? `<small>${esc(it.note)}</small>` : ""}</span>
                   <span class="leader" aria-hidden="true"></span>
                   ${price(it.price)}
                 </li>`
@@ -194,6 +201,7 @@
               <input data-c="${ci}" data-i="${ii}" data-f="price" type="number" min="0" step="1" inputmode="numeric" value="${it.price ?? ""}" aria-label="Prix de ${esc(it.name)} en pièces de cuivre" placeholder="à fixer" />
               <input data-c="${ci}" data-i="${ii}" data-f="note" value="${esc(it.note)}" aria-label="Remarque sur ${esc(it.name)}" placeholder="Remarque" />
               <button class="btn btn-quiet btn-danger" data-act="del-item" data-c="${ci}" data-i="${ii}" aria-label="Retirer ${esc(it.name)}">Retirer</button>
+              <input class="edit-variants" data-c="${ci}" data-i="${ii}" data-f="variants" value="${esc(UI.variantsOf(it).join(", "))}" aria-label="Coloris ou modèles de ${esc(it.name)}, séparés par des virgules" placeholder="Coloris ou modèles au choix, séparés par des virgules (ex : Bleu, Noir)" />
             </div>`
             )
             .join("")}
@@ -236,7 +244,7 @@
       draft = null;
       focus = '[data-act="edit"]';
     } else if (act === "add-item") {
-      draft.categories[ci].items.push({ id: Store.uid(), name: "", price: null, note: "" });
+      draft.categories[ci].items.push({ id: Store.uid(), name: "", price: null, note: "", variants: "" });
       focus = `.edit-item input[data-c="${ci}"][data-i="${draft.categories[ci].items.length - 1}"][data-f="name"]`;
     } else if (act === "del-item") {
       draft.categories[ci].items.splice(+b.dataset.i, 1);
