@@ -84,6 +84,7 @@
         <nav class="nav" aria-label="Pages">
           <a href="index.html" ${active === "prix" ? 'aria-current="page"' : ""}>Prix</a>
           <a href="registre.html" ${active === "registre" ? 'aria-current="page"' : ""}>Registre</a>
+          <a href="commandes.html" ${active === "commandes" ? 'aria-current="page"' : ""}>Commandes</a>
         </nav>
         <div class="account-box" id="account-box"></div>
         <p class="sync ${s.mode === "shared" ? "sync-shared" : ""}">

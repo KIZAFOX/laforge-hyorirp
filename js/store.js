@@ -48,7 +48,7 @@
     ],
   };
 
-  const LS = { prices: "laforge.prices", sales: "laforge.sales", history: "laforge.history", session: "laforge.session" };
+  const LS = { prices: "laforge.prices", sales: "laforge.sales", history: "laforge.history", session: "laforge.session", orders: "laforge.orders" };
 
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -146,7 +146,75 @@
         if (sale && sale.vendeur !== user) throw Object.assign(new Error("Tu ne peux effacer que tes propres ventes."), { status: 403 });
         write(LS.sales, all.filter((s) => s.id !== id));
       },
+
+      // Commandes : mêmes règles que le serveur (worker/src/orders.js)
+      async getOrders() {
+        who();
+        return read(LS.orders, []).sort((a, b) => b.createdAt - a.createdAt);
+      },
+      async addOrder(o) {
+        const user = who();
+        const now = Date.now();
+        const order = {
+          id: uid(),
+          createdAt: now,
+          createdBy: user,
+          client: o.client,
+          note: o.note || "",
+          deliveredAt: null,
+          lignes: o.lignes.map((l) => ({ ...l, id: uid(), done: 0 })),
+          paiements: [],
+        };
+        const p = o.paiement || {};
+        if (p.argent || p.cuivre)
+          order.paiements.push({ id: Date.now(), at: now, by: user, argent: p.argent || 0, cuivre: p.cuivre || 0, note: "Versé à la commande" });
+        write(LS.orders, [...read(LS.orders, []), order]);
+        return order;
+      },
+      async updateOrder(id, change) {
+        return editOrder(id, (o) => (o.deliveredAt = change.delivered ? Date.now() : null));
+      },
+      async deleteOrder(id) {
+        const user = who();
+        const all = read(LS.orders, []);
+        const o = all.find((x) => x.id === id);
+        if (o && o.createdBy !== user)
+          throw Object.assign(new Error("Seul le forgeron qui a créé la commande peut la supprimer."), { status: 403 });
+        write(LS.orders, all.filter((x) => x.id !== id));
+      },
+      async stepLine(id, lineId, change) {
+        return editOrder(id, (o) => {
+          const l = o.lignes.find((x) => x.id === lineId);
+          const next = change.delta !== undefined ? l.done + change.delta : change.done;
+          l.done = Math.max(0, Math.min(l.qty, next));
+        });
+      },
+      async addPayment(id, p) {
+        const user = who();
+        if (!p.argent && !p.cuivre) throw new Error("Indique combien le client a payé.");
+        return editOrder(id, (o) =>
+          o.paiements.push({ id: Date.now(), at: Date.now(), by: user, argent: p.argent || 0, cuivre: p.cuivre || 0, note: p.note || "" })
+        );
+      },
+      async deletePayment(id, paymentId) {
+        const user = who();
+        return editOrder(id, (o) => {
+          const p = o.paiements.find((x) => x.id === paymentId);
+          if (p && p.by !== user) throw Object.assign(new Error("Tu ne peux retirer que les versements que tu as notés."), { status: 403 });
+          o.paiements = o.paiements.filter((x) => x.id !== paymentId);
+        });
+      },
     };
+
+    function editOrder(id, fn) {
+      who();
+      const all = read(LS.orders, []);
+      const o = all.find((x) => x.id === id);
+      if (!o) throw new Error("Cette commande n'existe plus.");
+      fn(o);
+      write(LS.orders, all);
+      return o;
+    }
   }
 
   function apiStore(base) {
@@ -189,6 +257,14 @@
       getSales: () => req("GET", "/api/sales"),
       addSale: (s) => req("POST", "/api/sales", s),
       deleteSale: (id) => req("DELETE", "/api/sales/" + encodeURIComponent(id)),
+      getOrders: () => req("GET", "/api/orders"),
+      addOrder: (o) => req("POST", "/api/orders", o),
+      updateOrder: (id, change) => req("PUT", "/api/orders/" + encodeURIComponent(id), change),
+      deleteOrder: (id) => req("DELETE", "/api/orders/" + encodeURIComponent(id)),
+      stepLine: (id, lineId, change) =>
+        req("POST", `/api/orders/${encodeURIComponent(id)}/lines/${encodeURIComponent(lineId)}`, change),
+      addPayment: (id, p) => req("POST", `/api/orders/${encodeURIComponent(id)}/payments`, p),
+      deletePayment: (id, paymentId) => req("DELETE", `/api/orders/${encodeURIComponent(id)}/payments/${paymentId}`),
     };
   }
 

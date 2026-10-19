@@ -72,6 +72,10 @@ Envoie ensuite à chaque forgeron **son** token, en message privé.
 
 Le site affiche `img/logo.png` dans l'en-tête et comme icône d'onglet. Dépose le logo du serveur à cet endroit (format carré). Sans fichier, l'en-tête affiche seulement le nom en texte.
 
+## Après une modification du site
+
+Dans `index.html` et `registre.html`, les fichiers CSS et JS sont appelés avec un numéro de version (`style.css?v=4`). Quand tu modifies un fichier de `css/` ou `js/`, augmente ce numéro dans les deux pages (`?v=5`, puis `?v=6`…) : les navigateurs des forgerons chargeront alors la nouvelle version au lieu de garder l'ancienne en cache.
+
 ## Monnaie
 
 Les prix sont enregistrés en cuivre et affichés en pièces : **1 pièce d'argent = 100 pièces de cuivre** (125 s'affiche 1 argent 25 cuivre). À chaque vente, on peut noter ce que le client a donné (argent et cuivre) : le site calcule la monnaie à rendre ou ce qui reste dû.
@@ -80,6 +84,16 @@ Si ta base en ligne a été créée avant l'ajout des pièces d'argent, lance un
 
 ```bash
 npm run db:paiement
+```
+
+## Commandes
+
+La page **Commandes** (`commandes.html`) sert aux grosses commandes à fabriquer : on coche les pièces faites ligne par ligne (barre et % d'avancement) et on note chaque versement du client jusqu'au paiement complet. Tous les forgerons peuvent avancer une commande et noter un versement ; seul celui qui l'a créée peut la supprimer, et chacun ne peut retirer que ses propres versements.
+
+Sur une base en ligne créée avant cette page, lance une fois, dans `worker/`, **avant** le deploy :
+
+```bash
+npm run db:commandes
 ```
 
 ## Ajouter ou renommer un forgeron

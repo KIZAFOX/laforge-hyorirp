@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Commandes | Hyori RP</title>
+  <link rel="icon" href="img/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
+</head>
+<body>
+  <header class="topbar" id="topbar"></header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Les commandes</h1>
+        <p class="lede">Les grosses commandes à fabriquer : on coche les pièces au fur et à mesure et on note chaque versement du client.</p>
+      </div>
+      <span class="vertical-mark" lang="ja" aria-hidden="true">注文</span>
+    </div>
+
+    <div class="orders-bar">
+      <div class="tabs" role="group" aria-label="Filtrer les commandes" id="tabs">
+        <button type="button" class="tab" data-filter="cours" aria-pressed="true">En cours</button>
+        <button type="button" class="tab" data-filter="livree" aria-pressed="false">Livrées</button>
+        <button type="button" class="tab" data-filter="toutes" aria-pressed="false">Toutes</button>
+      </div>
+      <div class="field field-grow">
+        <label for="o-search" class="sr-only">Rechercher une commande</label>
+        <input id="o-search" type="search" placeholder="Rechercher un client ou un article" />
+      </div>
+      <button type="button" class="btn btn-primary" id="new-order">Nouvelle commande</button>
+    </div>
+
+    <div id="orders"></div>
+  </main>
+
+  <datalist id="item-names"></datalist>
+
+  <script src="js/config.js?v=5"></script>
+  <script src="js/store.js?v=5"></script>
+  <script src="js/common.js?v=5"></script>
+  <script src="js/commandes.js?v=5"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 // API de La Forge : prix et registre des ventes stockés dans SQLite (Cloudflare D1).
 
-class BadRequest extends Error {}
+import { handleOrders, BadRequest, Forbidden } from "./orders.js";
 
 const str = (v, max, field, required = false) => {
   const s = typeof v === "string" ? v.trim() : v == null ? "" : String(v).trim();
@@ -69,9 +69,13 @@ export default {
         return new Response(null, { status: 204, headers: cors });
       }
 
+      const order = await handleOrders(request, db, path, user);
+      if (order) return order.status === 204 ? new Response(null, { status: 204, headers: cors }) : json(order.data, order.status || 200);
+
       return fail(404, "Route inconnue.");
     } catch (e) {
       if (e instanceof BadRequest) return fail(400, e.message);
+      if (e instanceof Forbidden) return fail(403, e.message);
       console.error(e);
       return fail(500, "Erreur du serveur de la forge.");
     }
