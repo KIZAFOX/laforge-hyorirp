@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "laforge",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8123"],
+      "port": 8123
+    },
+    {
+      "name": "laforge-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["worker/node_modules/wrangler/bin/wrangler.js", "dev", "--config", "worker/wrangler.toml", "--port", "8787", "--ip", "127.0.0.1"],
+      "port": 8787
+    }
+  ]
+}

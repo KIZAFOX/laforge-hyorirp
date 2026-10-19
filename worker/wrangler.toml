@@ -1,0 +1,20 @@
+name = "laforge-api"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "laforge"
+# Remplace par l'id affiché par : npx wrangler d1 create laforge
+database_id = "14a97acd-db95-48f1-88c4-8a2536a1925c"
+
+[vars]
+# Adresse du site GitHub Pages autorisée à appeler l'API ("*" = toutes)
+ALLOWED_ORIGIN = "*"
+# Les comptes des forgerons (séparés par des virgules)
+ACCOUNTS = "Kamon,Asahi,Kurogane"
+
+# Le token de chaque compte se règle en secret (jamais dans ce fichier) :
+#   npx wrangler secret put TOKEN_KAMON
+#   npx wrangler secret put TOKEN_ASAHI
+#   npx wrangler secret put TOKEN_KUROGANE

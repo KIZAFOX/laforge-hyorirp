@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registre des ventes | Hyori RP</title>
+  <link rel="icon" href="img/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar" id="topbar"></header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Le registre des ventes</h1>
+        <p class="lede">Chaque vente inscrite ici est visible par toute la forge : qui a vendu, à qui, quoi et pour combien.</p>
+      </div>
+      <span class="vertical-mark" lang="ja" aria-hidden="true">大福帳</span>
+    </div>
+
+    <div class="ledger-layout">
+      <form class="slip" id="sale-form" autocomplete="off" novalidate>
+        <h2>Inscrire une vente</h2>
+        <p class="slip-seller" id="f-vendeur"></p>
+        <div class="field">
+          <label for="f-client">Client <span class="optional">(facultatif)</span></label>
+          <input id="f-client" maxlength="60" placeholder="Nom de l'acheteur" />
+        </div>
+        <fieldset class="lines-set">
+          <legend>Articles vendus</legend>
+          <div class="line line-head" aria-hidden="true"><span>Article</span><span>Qté</span><span>Prix u.</span><span></span></div>
+          <div class="lines" id="lines"></div>
+          <button type="button" class="btn btn-quiet" id="add-line">Ajouter un article</button>
+        </fieldset>
+        <div class="field">
+          <label for="f-note">Remarque <span class="optional">(facultatif)</span></label>
+          <textarea id="f-note" maxlength="300" rows="2" placeholder="ex : payé en deux fois, réduction ami"></textarea>
+        </div>
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+        <div class="slip-total">
+          <span>Total</span>
+          <strong id="f-total">0</strong>
+        </div>
+        <button class="btn btn-primary btn-wide" type="submit">Inscrire au registre</button>
+      </form>
+
+      <section class="ledger" aria-labelledby="ledger-title">
+        <h2 id="ledger-title" class="sr-only">Ventes inscrites</h2>
+        <div class="accounts" id="summary"></div>
+        <div class="filters">
+          <div class="field">
+            <label for="flt-vendeur">Vendeur</label>
+            <select id="flt-vendeur"><option value="">Tous</option></select>
+          </div>
+          <div class="field field-grow">
+            <label for="flt-search">Rechercher</label>
+            <input id="flt-search" type="search" placeholder="Client, article, remarque" />
+          </div>
+          <button type="button" class="btn" id="export">Télécharger en CSV</button>
+        </div>
+        <div id="sales"></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/registre.js"></script>
+</body>
+</html>

@@ -1,0 +1,676 @@
+/* La Forge, Hyori RP : livre de comptes d'une forge d'Edo.
+   Papier washi + encre sumi (neutres), indigo des noren et cuivre des pièces mon (couleurs),
+   vermillon des sceaux (unique accent : sceaux et action principale). */
+
+:root {
+  --washi: #f3ead7;
+  --paper: #f8f2e4;
+  --washi-deep: #e8dcc0;
+  --rule: #cdbb95;
+  --rule-strong: #8d7a57;
+  --sumi: #211a15;
+  --sumi-soft: #4b3f34;
+  --muted: #66574a;
+  --ai: #22365a;
+  --ai-deep: #1a2a47;
+  --dou: #8c4f24;
+  --dou-light: #e0a36f;
+  --shu: #a93226;
+  --shu-deep: #8a271d;
+
+  --font-ink: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+  --font-hand: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --radius: 4px;
+}
+
+* { box-sizing: border-box; }
+
+html { color-scheme: light; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--sumi);
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1.55;
+  /* Grain du papier washi : la page entière est un livre de comptes. */
+  background-color: var(--washi);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .42 0 0 0 0 .33 0 0 0 0 .2 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+h1, h2, h3 { font-family: var(--font-ink); font-weight: 800; line-height: 1.15; margin: 0; }
+
+a { color: var(--ai); }
+
+:focus-visible {
+  outline: 3px solid var(--ai);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- En-tête ---------- */
+.topbar {
+  background: var(--paper);
+  border-bottom: 4px double var(--rule-strong);
+}
+.topbar-inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 10px 24px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--sumi);
+  text-decoration: none;
+  min-height: 44px;
+}
+.brand-logo { width: 40px; height: 40px; border-radius: var(--radius); object-fit: cover; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-text strong { font-family: var(--font-ink); font-size: 22px; font-weight: 800; }
+.brand-text small { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+.nav { display: flex; gap: 4px; }
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  color: var(--sumi-soft);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.nav a:hover { color: var(--sumi); border-bottom-color: var(--rule); }
+.nav a[aria-current="page"] { color: var(--sumi); border-bottom-color: var(--sumi); }
+
+.account-box { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.account-box .seal { width: 40px; height: 40px; font-size: 14px; }
+.account-who { display: flex; flex-direction: column; line-height: 1.15; }
+.account-who small { font-size: 12px; color: var(--muted); }
+.account-who strong { font-family: var(--font-ink); font-size: 18px; }
+
+.sync {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sync::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--shu);
+}
+.sync-shared::before { background: var(--ai); }
+
+/* ---------- Page ---------- */
+main {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 40px 24px 96px;
+}
+
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.page-head h1 { font-size: clamp(32px, 5vw, 52px); letter-spacing: -0.01em; }
+.lede { margin: 12px 0 0; max-width: 58ch; color: var(--sumi-soft); font-size: 17px; }
+
+/* Repère vertical en kanji : l'étiquette qu'on accroche au bord d'un registre. */
+.vertical-mark {
+  writing-mode: vertical-rl;
+  font-family: var(--font-ink);
+  font-weight: 800;
+  font-size: 54px;
+  line-height: 1;
+  color: var(--ai);
+  padding: 8px 0 8px 14px;
+  border-left: 2px solid var(--ai);
+  flex: none;
+}
+
+.meta { margin: 0; color: var(--muted); font-size: 14px; }
+.meta strong { color: var(--sumi-soft); }
+.meta-warn { color: var(--shu); font-weight: 500; }
+
+.state {
+  margin: 0;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--sumi-soft);
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--radius);
+}
+.state-error { border-color: var(--shu); color: var(--sumi); }
+.state-error p { margin: 0 0 16px; }
+
+/* ---------- Boutons et champs ---------- */
+.btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--sumi);
+  background: transparent;
+  color: var(--sumi);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--washi-deep); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:disabled:hover { background: transparent; }
+.btn-primary { background: var(--shu); border-color: var(--shu); color: #fff8ee; }
+.btn-primary:hover { background: var(--shu-deep); border-color: var(--shu-deep); }
+.btn-primary:disabled:hover { background: var(--shu); }
+.btn-quiet { border-color: transparent; color: var(--sumi-soft); padding: 0 12px; }
+.btn-danger { color: var(--shu); }
+.btn-x { width: 44px; padding: 0; font-size: 24px; line-height: 1; }
+.btn-wide { width: 100%; }
+.btn-add {
+  width: 100%;
+  border-style: dashed;
+  border-color: var(--rule-strong);
+  color: var(--sumi-soft);
+  min-height: 56px;
+}
+
+input, select, textarea {
+  font: inherit;
+  font-size: 16px;
+  color: var(--sumi);
+  background: #fbf7ec;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  min-height: 44px;
+  width: 100%;
+  min-width: 0;
+}
+textarea { resize: vertical; }
+input::placeholder, textarea::placeholder { color: #85735f; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 0; border-color: var(--ai); }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label, legend { font-size: 14px; font-weight: 700; color: var(--sumi-soft); }
+.optional { font-weight: 400; color: var(--muted); }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; cursor: pointer; }
+.check input { width: 20px; min-height: 20px; height: 20px; accent-color: var(--ai); }
+
+/* ---------- Prix ---------- */
+.price {
+  font-family: var(--font-ink);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.price-unset { font-family: var(--font-hand); font-weight: 500; font-style: italic; color: var(--muted); }
+
+/* Pièce mon : la monnaie de cuivre d'Edo, ronde et percée d'un trou carré. */
+.mon { width: 0.78em; height: 0.78em; fill: var(--dou); flex: none; }
+
+.board-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 28px;
+}
+.board-bar .btn { margin-left: auto; }
+
+/* Catégorie mise en avant : noren indigo suspendu à sa tringle. */
+.noren { margin-bottom: 48px; }
+.noren::before {
+  content: "";
+  display: block;
+  height: 10px;
+  margin: 0 -10px;
+  border-radius: 5px;
+  background: var(--sumi-soft);
+}
+.noren-cloth {
+  background: var(--ai);
+  color: var(--washi);
+  padding: 32px 32px 28px;
+  display: flex;
+  gap: 28px;
+}
+.noren::after {
+  content: "";
+  display: block;
+  height: 30px;
+  /* Les fentes du bas du rideau, qui le partagent en quatre pans. */
+  background: linear-gradient(
+    90deg,
+    var(--ai) 0 calc(25% - 3px), transparent 0 calc(25% + 3px),
+    var(--ai) 0 calc(50% - 3px), transparent 0 calc(50% + 3px),
+    var(--ai) 0 calc(75% - 3px), transparent 0 calc(75% + 3px),
+    var(--ai) 0
+  );
+}
+.noren-kanji {
+  writing-mode: vertical-rl;
+  font-family: var(--font-ink);
+  font-weight: 800;
+  font-size: 84px;
+  line-height: 1;
+  color: var(--washi);
+  flex: none;
+}
+.noren-body { flex: 1; min-width: 0; }
+.noren h2 { font-size: 34px; color: var(--washi); }
+.noren-note { margin: 8px 0 0; color: #d9d2c2; }
+.tags {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.tag {
+  border: 1px solid rgba(243, 234, 215, 0.4);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tag-name { font-weight: 500; }
+.tag .price { font-size: 36px; color: var(--washi); }
+.tag .mon { fill: var(--dou-light); }
+.tag .price-unset { font-size: 20px; color: #d9d2c2; }
+.tag-note { font-size: 14px; color: #d9d2c2; }
+
+/* Catégories ordinaires : pages du livre de comptes. */
+.planks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 28px 40px;
+  align-items: start;
+}
+.plank {
+  display: flex;
+  gap: 18px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 24px 24px 16px;
+}
+.plank-kanji {
+  writing-mode: vertical-rl;
+  font-family: var(--font-ink);
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--ai);
+  flex: none;
+}
+.plank-body { flex: 1; min-width: 0; }
+.plank h2 { font-size: 26px; }
+.plank-note { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.rows { list-style: none; margin: 14px 0 0; padding: 0; }
+.rows li {
+  display: flex;
+  align-items: baseline;
+  padding: 10px 0;
+  border-top: 1px solid var(--washi-deep);
+}
+.rows li:first-child { border-top: 0; }
+.row-name { min-width: 0; }
+.row-name small { display: block; font-size: 13px; color: var(--muted); }
+.leader {
+  flex: 1;
+  min-width: 16px;
+  margin: 0 10px;
+  border-bottom: 2px dotted var(--rule);
+  transform: translateY(-4px);
+}
+.rows .price { font-size: 21px; }
+
+.history {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 4px double var(--rule-strong);
+  max-width: 760px;
+}
+.history h2 { font-size: 22px; }
+.history ol { list-style: none; margin: 14px 0 0; padding: 0; }
+.history li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--washi-deep);
+}
+.hist-who { color: var(--muted); font-size: 14px; }
+
+/* ---------- Édition des prix ---------- */
+.edit-list { display: grid; gap: 24px; }
+.edit-cat {
+  margin: 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 20px;
+  min-width: 0;
+}
+.edit-cat-head {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: 12px 14px;
+  align-items: end;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.field-full { grid-column: 1 / -1; }
+.edit-cat-head .check { grid-column: 1; }
+.edit-cat-head .btn-danger { justify-self: end; grid-column: 2; }
+.edit-items { display: grid; gap: 8px; padding-top: 14px; }
+.edit-items > .btn { justify-self: start; }
+.edit-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 110px minmax(0, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.edit-item-head { font-size: 13px; font-weight: 700; color: var(--muted); }
+.edit-bar {
+  position: sticky;
+  bottom: 0;
+  margin: 24px -24px 0;
+  padding: 14px 24px;
+  background: var(--washi);
+  border-top: 4px double var(--rule-strong);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.edit-bar .meta { margin-right: auto; }
+
+/* ---------- Registre ---------- */
+.ledger-layout {
+  display: grid;
+  grid-template-columns: 390px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+
+/* Bordereau de vente (denpyō) : la feuille qu'on remplit avant de recopier au registre. */
+.slip {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 16px;
+  background: var(--paper);
+  border: 1.5px solid var(--sumi);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.slip h2 { font-size: 24px; }
+.lines-set { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
+.lines-set legend { padding: 0; margin-bottom: 8px; }
+.lines-set > .btn { justify-self: start; }
+.lines { display: grid; gap: 8px; }
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px 72px 44px;
+  gap: 6px;
+  align-items: center;
+}
+.line input[type="number"] { padding: 8px 6px; text-align: right; }
+.line-head { font-size: 13px; font-weight: 700; color: var(--muted); }
+.line-head span:nth-child(2), .line-head span:nth-child(3) { text-align: right; padding-right: 6px; }
+.form-error { margin: 0; color: var(--shu); font-weight: 500; }
+.slip-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 2px solid var(--sumi);
+  border-bottom: 4px double var(--sumi);
+}
+.slip-total span { font-weight: 700; }
+.slip-total strong { font-family: var(--font-ink); font-size: 34px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+
+/* Sceau (hanko) du vendeur : signe chaque ligne du registre. */
+.seal {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  font-family: var(--font-ink);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  color: var(--shu);
+  border: 2px solid var(--shu);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3px var(--shu);
+  transform: rotate(-4deg);
+  background: var(--paper);
+}
+
+.accounts { margin-bottom: 28px; }
+.account-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 16px;
+}
+.account-label { font-weight: 700; color: var(--sumi-soft); }
+.account-total strong {
+  font-family: var(--font-ink);
+  font-size: 44px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+.account-sub { color: var(--muted); font-size: 14px; }
+.account-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.account {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 10px 16px 10px 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+.account .seal { grid-row: 1 / 3; }
+.account-name { grid-column: 2; grid-row: 1; font-weight: 700; font-size: 14px; }
+.account .account-sub { grid-column: 2; grid-row: 2; }
+.account strong {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  margin-left: 8px;
+  font-family: var(--font-ink);
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 4px double var(--rule-strong);
+}
+.filters .field { flex: 0 1 200px; }
+.filters .field-grow { flex: 1 1 220px; }
+
+.entries { list-style: none; margin: 0; padding: 0; }
+.entry {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.entry .seal { margin-top: 2px; }
+.entry-head { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.entry-head strong { font-family: var(--font-ink); font-size: 19px; }
+.entry-head span { color: var(--sumi-soft); }
+.entry-head time { color: var(--muted); font-size: 14px; }
+.entry-lines { list-style: none; margin: 8px 0 0; padding: 0; }
+.entry-lines li { display: flex; flex-wrap: wrap; gap: 0 10px; }
+.entry-unit { color: var(--muted); font-size: 14px; }
+.entry-note { margin: 8px 0 0; color: var(--sumi-soft); font-style: italic; font-size: 15px; }
+.entry-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.entry-total { font-family: var(--font-ink); font-size: 26px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+
+#sales > .state, #sales > .meta-warn { margin-top: 20px; }
+
+/* ---------- Divers ---------- */
+dialog {
+  width: min(400px, calc(100% - 32px));
+  padding: 24px;
+  border: 1.5px solid var(--sumi);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--sumi);
+}
+dialog::backdrop { background: rgba(33, 26, 21, 0.55); }
+.login { display: grid; gap: 14px; }
+.login h2 { font-size: 26px; }
+.login-msg { margin: 0; color: var(--sumi-soft); }
+.login-accounts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.account-pick {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  font: inherit;
+  font-family: var(--font-ink);
+  font-size: 22px;
+  font-weight: 800;
+  text-align: left;
+  color: var(--sumi);
+  background: var(--washi);
+  border: 1.5px solid var(--rule-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.account-pick:hover { border-color: var(--sumi); background: var(--washi-deep); }
+.login-user { display: flex; align-items: center; gap: 14px; font-family: var(--font-ink); font-size: 22px; }
+
+.slip-seller { margin: 0; display: flex; align-items: center; gap: 12px; }
+.slip-seller strong { font-family: var(--font-ink); font-size: 18px; }
+.row-end { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  background: var(--sumi);
+  color: var(--washi);
+  font-weight: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.toast.show { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: none; }
+}
+
+/* ---------- Écrans moyens et petits ---------- */
+@media (max-width: 960px) {
+  .ledger-layout { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .slip { position: static; }
+}
+
+@media (max-width: 640px) {
+  .topbar-inner { padding: 8px 16px; gap: 6px 16px; }
+  .account-box { margin-left: 0; width: 100%; }
+  .account-box .btn { margin-left: auto; }
+  main { padding: 28px 16px 80px; }
+  .page-head { margin-bottom: 24px; }
+  .vertical-mark { font-size: 34px; padding-left: 10px; }
+  .lede { font-size: 16px; }
+
+  /* Sur téléphone, le kanji passe dans le coin pour laisser la largeur aux prix. */
+  .noren-cloth, .plank { position: relative; }
+  .noren-cloth { padding: 22px 16px 18px; }
+  .noren-kanji { position: absolute; top: 18px; right: 14px; font-size: 44px; }
+  .noren h2 { font-size: 28px; padding-right: 56px; }
+  .noren-note { padding-right: 56px; }
+  .tags { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .tag { padding: 12px; }
+  .tag .price { font-size: 28px; }
+  .plank { padding: 18px 16px 10px; }
+  .plank-kanji { position: absolute; top: 16px; right: 14px; font-size: 26px; }
+  .plank h2 { padding-right: 40px; }
+
+  .board-bar .btn { margin-left: 0; width: 100%; }
+  .edit-cat { padding: 16px; }
+  .edit-cat-head { grid-template-columns: 1fr 84px; }
+  .edit-cat-head .btn-danger { grid-column: 1 / -1; justify-self: start; }
+  .edit-item-head { display: none; }
+  .edit-item {
+    grid-template-columns: minmax(0, 1fr) 96px;
+    padding: 10px 0;
+    border-top: 1px solid var(--washi-deep);
+  }
+  .edit-item input[data-f="note"] { grid-column: 1; }
+  .edit-bar { margin: 24px -16px 0; padding: 12px 16px; }
+  .edit-bar .meta { flex-basis: 100%; }
+  .edit-bar .btn { flex: 1; }
+
+  .slip { padding: 18px 16px; }
+  .line { grid-template-columns: minmax(0, 1fr) 52px 64px 44px; gap: 4px; }
+  .account-total strong { font-size: 36px; }
+  .account { flex: 1 1 100%; }
+  .entry { grid-template-columns: 44px minmax(0, 1fr); gap: 4px 14px; }
+  .entry-side { grid-column: 2; flex-direction: row; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .filters .field, .filters .field-grow { flex: 1 1 100%; }
+  .filters .btn { width: 100%; }
+}

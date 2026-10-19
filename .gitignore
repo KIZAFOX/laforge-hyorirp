@@ -1,0 +1,4 @@
+node_modules/
+.wrangler/
+# Tokens de test locaux : ne jamais les publier
+.dev.vars
