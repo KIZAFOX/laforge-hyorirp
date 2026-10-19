@@ -96,6 +96,12 @@ Sur une base en ligne créée avant cette page, lance une fois, dans `worker/`, 
 npm run db:commandes
 ```
 
+## Clients
+
+Il n'y a pas de fichier clients à remplir : la page **Clients** (`clients.html`) les retrouve dans le registre et les commandes. Un nom tapé une fois dans « Client » est proposé les fois suivantes (les majuscules ne comptent pas : « kenji » et « Kenji » sont la même personne). Chaque fiche client montre ce qu'il a payé, ce qu'il doit encore, ses commandes et ses ventes.
+
+Une vente sans paiement noté est considérée comme payée sur place ; seuls les paiements partiels comptent dans « Reste dû ».
+
 ## Ajouter ou renommer un forgeron
 
 1. Modifie la liste dans [`js/config.js`](js/config.js) (`LAFORGE_ACCOUNTS`) **et** dans [`worker/wrangler.toml`](worker/wrangler.toml) (`ACCOUNTS`).

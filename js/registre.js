@@ -12,6 +12,10 @@
   let sales = null;
   let salesError = null;
   let lines = [newLine()];
+  let orders = [];
+
+  // Suggestions de clients déjà venus (ventes + commandes)
+  const clientBox = UI.clientField($("f-client"), $("f-client-hint"), () => UI.clientsFrom(sales, orders));
 
   // Le vendeur est toujours le compte connecté.
   function renderSeller() {
@@ -162,6 +166,7 @@
       const saved = await UI.run(() => store.addSale(sale));
       lines = [newLine()];
       $("f-client").value = "";
+      clientBox.update();
       $("f-note").value = "";
       $("f-argent").value = "";
       $("f-cuivre").value = "";
@@ -265,7 +270,7 @@
           <div class="entry-main">
             <p class="entry-head">
               <strong>${esc(s.vendeur)}</strong>
-              ${s.client ? `<span>à ${esc(s.client)}</span>` : ""}
+              ${s.client ? `<span>à ${UI.clientLink(s.client)}</span>` : ""}
               <time datetime="${new Date(s.date).toISOString()}">${fmtDate(s.date)}</time>
             </p>
             <ul class="entry-lines">
@@ -379,7 +384,7 @@
           </div>
         </div>
         <dl class="detail-dl">
-          <div><dt>Client</dt><dd>${s.client ? esc(s.client) : '<span class="detail-sub">Non précisé</span>'}</dd></div>
+          <div><dt>Client</dt><dd>${s.client ? UI.clientLink(s.client) : '<span class="detail-sub">Non précisé</span>'}</dd></div>
         </dl>
         <h3>Articles</h3>
         <div class="detail-table-wrap">
@@ -453,6 +458,17 @@
       salesError = e;
     }
     renderSales();
+    clientBox.refresh();
+  }
+
+  // Les commandes ne servent ici qu'à reconnaître les clients.
+  async function loadOrders() {
+    try {
+      orders = await UI.run(() => store.getOrders());
+      clientBox.refresh();
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async function loadPrices() {
@@ -471,10 +487,11 @@
   renderSales();
   loadPrices().then(() => {
     renderSeller();
-    return loadSales();
+    return loadSales().then(loadOrders);
   });
   UI.poll(() => {
     loadSales();
     loadPrices();
+    loadOrders();
   }, () => document.querySelector("dialog[open]"));
 })();

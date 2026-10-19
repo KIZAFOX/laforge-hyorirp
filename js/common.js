@@ -85,6 +85,7 @@
           <a href="index.html" ${active === "prix" ? 'aria-current="page"' : ""}>Prix</a>
           <a href="registre.html" ${active === "registre" ? 'aria-current="page"' : ""}>Registre</a>
           <a href="commandes.html" ${active === "commandes" ? 'aria-current="page"' : ""}>Commandes</a>
+          <a href="clients.html" ${active === "clients" ? 'aria-current="page"' : ""}>Clients</a>
         </nav>
         <div class="account-box" id="account-box"></div>
         <p class="sync ${s.mode === "shared" ? "sync-shared" : ""}">
@@ -229,5 +230,107 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
   }
 
-  window.UI = { esc, me, SILVER, amount, amountText, price, fmtDate, seal, init, run, allowLoginPrompt, poll, toast };
+  // ---------- Clients ----------
+  // Pas de fichier clients à tenir : on les retrouve dans les ventes et les commandes.
+  // « kenji » et « Kenji » sont le même client.
+  const clientKey = (name) => String(name || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("fr");
+
+  const salePaid = (s) => (s.paiement ? s.paiement.argent * SILVER + s.paiement.cuivre : 0);
+  const orderTotal = (o) => o.lignes.reduce((t, l) => t + l.qty * l.unit, 0);
+  const orderPaid = (o) => o.paiements.reduce((t, p) => t + p.argent * SILVER + p.cuivre, 0);
+
+  function clientsFrom(sales, orders) {
+    const map = new Map();
+    const get = (name, at) => {
+      const key = clientKey(name);
+      if (!key) return null;
+      let c = map.get(key);
+      if (!c) map.set(key, (c = { key, name: "", last: 0, spellings: new Map(), sales: [], orders: [] }));
+      const spelled = name.trim().replace(/\s+/g, " ");
+      c.spellings.set(spelled, (c.spellings.get(spelled) || 0) + 1);
+      c.last = Math.max(c.last, at);
+      return c;
+    };
+    (sales || []).forEach((s) => get(s.client, s.date)?.sales.push(s));
+    (orders || []).forEach((o) => get(o.client, o.createdAt)?.orders.push(o));
+    // Nom affiché : l'orthographe la plus utilisée ; à égalité, « Kenji » plutôt que « KENJI » ou « kenji ».
+    const tidy = (s) => (/^\p{Lu}/u.test(s) && s !== s.toLocaleUpperCase("fr") ? 1 : 0);
+    for (const c of map.values()) {
+      c.name = [...c.spellings].sort((a, b) => b[1] - a[1] || tidy(b[0]) - tidy(a[0]))[0][0];
+      delete c.spellings;
+      const salesTotal = c.sales.reduce((t, s) => t + s.total, 0);
+      // Une vente sans paiement noté est considérée comme réglée sur place.
+      const salesDue = c.sales.reduce((t, s) => {
+        const p = salePaid(s);
+        return t + (p && p < s.total ? s.total - p : 0);
+      }, 0);
+      const ordersPaid = c.orders.reduce((t, o) => t + orderPaid(o), 0);
+      const ordersDue = c.orders.reduce((t, o) => t + Math.max(0, orderTotal(o) - orderPaid(o)), 0);
+      c.paidToForge = salesTotal - salesDue + ordersPaid;
+      c.due = salesDue + ordersDue;
+      c.openOrders = c.orders.filter((o) => !o.deliveredAt).length;
+    }
+    return [...map.values()].sort((a, b) => b.last - a.last);
+  }
+
+  // Remplit la liste de suggestions et affiche sous le champ si le client est connu.
+  function clientField(input, hint, getClients) {
+    const listId = "client-names";
+    let dl = document.getElementById(listId);
+    if (!dl) {
+      dl = document.createElement("datalist");
+      dl.id = listId;
+      document.body.appendChild(dl);
+    }
+    input.setAttribute("list", listId);
+    const refresh = () => {
+      dl.innerHTML = getClients()
+        .map((c) => `<option value="${esc(c.name)}"></option>`)
+        .join("");
+      update();
+    };
+    const update = () => {
+      const key = clientKey(input.value);
+      if (!key) {
+        hint.hidden = true;
+        return;
+      }
+      const all = getClients();
+      const c = all.find((x) => x.key === key);
+      hint.hidden = false;
+      if (!c) {
+        // Clients dont le nom contient ce qui est tapé : un clic remplit le champ.
+        const near = all.filter((x) => x.key.includes(key)).slice(0, 4);
+        hint.innerHTML = near.length
+          ? `<span>Déjà venu ?</span> ${near
+              .map((x) => `<button type="button" class="btn btn-chip" data-pick-client="${esc(x.name)}">${esc(x.name)}</button>`)
+              .join("")} <span class="meta">Sinon c'est un nouveau client.</span>`
+          : `Nouveau client : il sera retenu pour les prochaines fois.`;
+        return;
+      }
+      const parts = [];
+      if (c.sales.length) parts.push(`${c.sales.length} vente${c.sales.length > 1 ? "s" : ""}`);
+      if (c.orders.length) parts.push(`${c.orders.length} commande${c.orders.length > 1 ? "s" : ""}${c.openOrders ? ` dont ${c.openOrders} en cours` : ""}`);
+      hint.innerHTML =
+        `Client connu : ${parts.join(", ")}.` +
+        (c.due ? ` <span class="pay-short">Reste dû ${esc(amountText(c.due))}.</span>` : "") +
+        ` <a href="clients.html#client=${encodeURIComponent(c.name)}">Voir sa fiche</a>`;
+    };
+    input.addEventListener("input", update);
+    hint.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-pick-client]");
+      if (!b) return;
+      input.value = b.dataset.pickClient;
+      update();
+      input.focus();
+    });
+    return { refresh, update };
+  }
+
+  const clientLink = (name) => `<a class="client-link" href="clients.html#client=${encodeURIComponent(name)}">${esc(name)}</a>`;
+
+  window.UI = {
+    esc, me, SILVER, amount, amountText, price, fmtDate, seal, init, run, allowLoginPrompt, poll, toast,
+    clientKey, clientsFrom, clientField, clientLink, salePaid, orderTotal, orderPaid,
+  };
 })();

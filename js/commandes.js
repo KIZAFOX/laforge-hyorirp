@@ -10,6 +10,8 @@
   let ordersError = null;
   let prices = { categories: [] };
   let filter = "cours";
+  let sales = []; // seulement pour reconnaître les clients déjà venus
+  const knownClients = () => UI.clientsFrom(sales, orders);
 
   // ---------- Calculs ----------
   const totalOf = (o) => o.lignes.reduce((s, l) => s + l.qty * l.unit, 0);
@@ -100,7 +102,7 @@
           <li class="order order-${st.key}" data-order="${esc(o.id)}">
             <div class="order-top">
               <div class="order-who">
-                <h2>${esc(o.client)}</h2>
+                <h2>${UI.clientLink(o.client)}</h2>
                 <p class="meta">${seal(o.createdBy)} Créée le ${fmtDate(o.createdAt)} par <strong>${esc(o.createdBy)}</strong></p>
               </div>
               <div class="order-total">
@@ -186,7 +188,8 @@
         <h2 id="new-title">Nouvelle commande</h2>
         <div class="field">
           <label for="n-client">Client</label>
-          <input id="n-client" maxlength="60" required placeholder="Pour qui est la commande" />
+          <input id="n-client" maxlength="60" required placeholder="Pour qui est la commande" autocomplete="off" />
+          <p class="client-hint" id="n-client-hint" aria-live="polite" hidden></p>
         </div>
         <fieldset class="lines-set">
           <legend>Pièces commandées</legend>
@@ -214,6 +217,7 @@
         </div>
       </form>`;
     renderNewLines();
+    UI.clientField($("n-client"), $("n-client-hint"), knownClients).refresh();
     dlg.showModal();
     $("n-client").focus();
   }
@@ -371,7 +375,7 @@
         <div class="detail-head">
           ${seal(o.createdBy)}
           <div>
-            <h2 id="od-title">Commande de ${esc(o.client)}</h2>
+            <h2 id="od-title">Commande de ${UI.clientLink(o.client)}</h2>
             <p class="meta">Créée le ${fmtDate(o.createdAt)} par ${esc(o.createdBy)} · ${esc(st.label)}</p>
           </div>
         </div>
@@ -597,10 +601,46 @@
     }
   }
 
+  async function loadSales() {
+    try {
+      sales = await UI.run(() => store.getSales());
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Lien direct vers une commande (depuis la fiche d'un client) : commandes.html#commande=<id>
+  function openFromHash() {
+    // Nouvelle commande pour un client connu : commandes.html#nouvelle=Kenji
+    const n = location.hash.match(/^#nouvelle=(.+)$/);
+    if (n) {
+      history.replaceState(null, "", location.pathname);
+      openNew();
+      $("n-client").value = decodeURIComponent(n[1]);
+      $("n-client").dispatchEvent(new Event("input", { bubbles: true }));
+      return dialogFocusFirstLine();
+    }
+    const m = location.hash.match(/^#commande=([\w-]+)$/);
+    if (!m || !orders) return;
+    const o = findOrder(m[1]);
+    if (!o) return UI.toast("Cette commande n'existe plus");
+    filter = o.deliveredAt ? "livree" : "cours";
+    renderList();
+    history.replaceState(null, "", location.pathname);
+    openDetail(o.id, listEl.querySelector(`[data-order="${o.id}"] [data-open]`));
+  }
+
+  window.addEventListener("hashchange", openFromHash);
+  const dialogFocusFirstLine = () => $("new-dialog").querySelector('[data-i="0"][data-f="name"]').focus();
+
   renderList();
-  loadPrices().then(load);
+  loadPrices()
+    .then(load)
+    .then(loadSales)
+    .then(openFromHash);
   UI.poll(() => {
     load();
     loadPrices();
+    loadSales();
   }, () => !!document.querySelector("dialog[open]") || pending > 0);
 })();

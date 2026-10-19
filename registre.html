@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
 </head>
 <body>
   <header class="topbar" id="topbar"></header>
@@ -28,7 +28,8 @@
         <p class="slip-seller" id="f-vendeur"></p>
         <div class="field">
           <label for="f-client">Client <span class="optional">(facultatif)</span></label>
-          <input id="f-client" maxlength="60" placeholder="Nom de l'acheteur" />
+          <input id="f-client" maxlength="60" placeholder="Nom de l'acheteur" autocomplete="off" />
+          <p class="client-hint" id="f-client-hint" aria-live="polite" hidden></p>
         </div>
         <fieldset class="lines-set">
           <legend>Articles vendus</legend>
@@ -81,9 +82,9 @@
     </div>
   </main>
 
-  <script src="js/config.js?v=5"></script>
-  <script src="js/store.js?v=5"></script>
-  <script src="js/common.js?v=5"></script>
-  <script src="js/registre.js?v=5"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/store.js?v=6"></script>
+  <script src="js/common.js?v=6"></script>
+  <script src="js/registre.js?v=6"></script>
 </body>
 </html>
