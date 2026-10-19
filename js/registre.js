@@ -260,7 +260,7 @@
       `<ol class="entries">${list
         .map(
           (s) => `
-        <li class="entry">
+        <li class="entry" data-sale="${esc(s.id)}">
           ${seal(s.vendeur)}
           <div class="entry-main">
             <p class="entry-head">
@@ -276,7 +276,10 @@
           </div>
           <div class="entry-side">
             <span class="entry-total">${amount(s.total)}</span>
-            ${s.vendeur === UI.me() ? `<button class="btn btn-quiet btn-danger" data-del-sale="${esc(s.id)}" aria-label="Effacer la vente de ${esc(s.vendeur)} du ${fmtDate(s.date)}">Effacer</button>` : ""}
+            <span class="entry-actions">
+              <button class="btn btn-quiet" data-detail="${esc(s.id)}" aria-label="Détails de la vente de ${esc(s.vendeur)} du ${fmtDate(s.date)}">Détails</button>
+              ${s.vendeur === UI.me() ? `<button class="btn btn-quiet btn-danger" data-del-sale="${esc(s.id)}" aria-label="Effacer la vente de ${esc(s.vendeur)} du ${fmtDate(s.date)}">Effacer</button>` : ""}
+            </span>
           </div>
         </li>`
         )
@@ -309,21 +312,107 @@
       renderSeller();
       return loadSales();
     }
-    const b = e.target.closest("button[data-del-sale]");
-    if (!b) return;
-    const s = sales.find((x) => x.id === b.dataset.delSale);
-    if (!s || !confirm(`Effacer la vente de ${s.vendeur} du ${fmtDate(s.date)} (${amountText(s.total)}) ?`)) return;
-    b.disabled = true;
+    const del = e.target.closest("button[data-del-sale]");
+    if (del) return removeSale(sales.find((x) => x.id === del.dataset.delSale), del);
+    // Un clic n'importe où sur la ligne (hors bouton ou lien) ouvre la fiche.
+    const row = e.target.closest("[data-detail], .entry");
+    if (!row || (e.target.closest("button, a") && !e.target.closest("[data-detail]"))) return;
+    const s = sales.find((x) => x.id === (row.dataset.detail || row.dataset.sale));
+    if (s) openDetail(s, row.closest(".entry").querySelector("[data-detail]"));
+  });
+
+  async function removeSale(s, btn) {
+    if (!s || !confirm(`Effacer la vente de ${s.vendeur} du ${fmtDate(s.date)} (${amountText(s.total)}) ?`)) return false;
+    btn.disabled = true;
     try {
       await UI.run(() => store.deleteSale(s.id));
       UI.toast("Vente effacée du registre");
       await loadSales();
       fltSearch.focus();
+      return true;
     } catch (err) {
       alert("La vente n'a pas été effacée. " + err.message);
-      b.disabled = false;
+      btn.disabled = false;
+      return false;
     }
-  });
+  }
+
+  // ---------- Fiche détail d'une vente ----------
+  function openDetail(s, returnFocus) {
+    let dlg = $("sale-dialog");
+    if (!dlg) {
+      dlg = document.createElement("dialog");
+      dlg.id = "sale-dialog";
+      dlg.setAttribute("aria-labelledby", "detail-title");
+      document.body.appendChild(dlg);
+      // Clic sur le fond sombre : ferme la fiche.
+      dlg.addEventListener("click", (e) => e.target === dlg && dlg.close());
+    }
+    const paid = paidOf(s);
+    const p = s.paiement || { argent: 0, cuivre: 0 };
+    const long = new Date(s.date).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+    let payment;
+    if (!paid) payment = `<p class="detail-empty">Le paiement n'a pas été noté pour cette vente.</p>`;
+    else {
+      const diff = paid - s.total;
+      payment = `
+        <dl class="detail-dl">
+          <div><dt>Pièces d'argent données</dt><dd>${p.argent}${p.argent ? ` <span class="detail-sub">(${p.argent * UI.SILVER} cuivre)</span>` : ""}</dd></div>
+          <div><dt>Pièces de cuivre données</dt><dd>${p.cuivre}</dd></div>
+          <div><dt>Total donné</dt><dd>${amount(paid)}</dd></div>
+          ${
+            diff >= 0
+              ? `<div class="detail-key"><dt>Monnaie rendue</dt><dd>${diff ? amount(diff) : "Compte juste, rien à rendre"}</dd></div>`
+              : `<div class="detail-key pay-short"><dt>Reste dû</dt><dd>${amount(-diff)}</dd></div>`
+          }
+        </dl>`;
+    }
+
+    dlg.innerHTML = `
+      <div class="detail">
+        <div class="detail-head">
+          ${seal(s.vendeur)}
+          <div>
+            <h2 id="detail-title">Vente de ${esc(s.vendeur)}</h2>
+            <p class="meta">${esc(long)}</p>
+          </div>
+        </div>
+        <dl class="detail-dl">
+          <div><dt>Client</dt><dd>${s.client ? esc(s.client) : '<span class="detail-sub">Non précisé</span>'}</dd></div>
+        </dl>
+        <h3>Articles</h3>
+        <div class="detail-table-wrap">
+          <table class="detail-lines">
+            <thead><tr><th scope="col">Article</th><th scope="col" class="num">Qté</th><th scope="col" class="num">Prix u.</th><th scope="col" class="num">Total</th></tr></thead>
+            <tbody>
+              ${s.lignes
+                .map(
+                  (l) =>
+                    `<tr><td>${esc(l.name)}</td><td class="num">${l.qty}</td><td class="num">${amount(l.unit)}</td><td class="num">${amount(l.qty * l.unit)}</td></tr>`
+                )
+                .join("")}
+            </tbody>
+            <tfoot><tr><th scope="row" colspan="3">Total de la vente</th><td class="num">${amount(s.total)}</td></tr></tfoot>
+          </table>
+        </div>
+        <h3>Paiement</h3>
+        ${payment}
+        ${s.note ? `<h3>Remarque</h3><p class="detail-note">${esc(s.note)}</p>` : ""}
+        <div class="row-end">
+          ${s.vendeur === UI.me() ? `<button type="button" class="btn btn-quiet btn-danger" data-detail-del>Effacer cette vente</button>` : ""}
+          <button type="button" class="btn btn-primary" data-detail-close>Fermer</button>
+        </div>
+      </div>`;
+
+    dlg.querySelector("[data-detail-close]").addEventListener("click", () => dlg.close());
+    dlg.querySelector("[data-detail-del]")?.addEventListener("click", async (e) => {
+      if (await removeSale(s, e.currentTarget)) dlg.close();
+    });
+    dlg.onclose = () => returnFocus && document.contains(returnFocus) && returnFocus.focus();
+    dlg.showModal();
+    dlg.querySelector("[data-detail-close]").focus();
+  }
 
   fltVendeur.addEventListener("change", renderSales);
   fltSearch.addEventListener("input", renderSales);

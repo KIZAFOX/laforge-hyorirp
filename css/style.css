@@ -470,6 +470,41 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .pay-status strong { font-family: var(--font-ink); font-size: 20px; color: var(--sumi); }
 .pay-short, .pay-short strong { color: var(--shu); }
 .entry-pay { margin: 8px 0 0; font-size: 15px; color: var(--sumi-soft); }
+
+/* La ligne entière ouvre la fiche : le survol l'indique. */
+.entry { cursor: pointer; }
+.entry:hover { background: rgba(232, 220, 192, 0.45); }
+.entry-actions { display: flex; gap: 2px; }
+
+/* Fiche détail d'une vente */
+#sale-dialog { width: min(600px, calc(100% - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+.detail { display: grid; gap: 14px; }
+.detail h3 {
+  font-size: 17px;
+  margin-top: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+.detail-head { display: flex; align-items: center; gap: 14px; }
+.detail-head h2 { font-size: 26px; }
+.detail-head .meta::first-letter { text-transform: uppercase; }
+.detail-dl { margin: 0; display: grid; gap: 6px; }
+.detail-dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.detail-dl dt { color: var(--sumi-soft); }
+.detail-dl dd { margin: 0; font-weight: 700; text-align: right; }
+.detail-key { padding-top: 8px; border-top: 2px solid var(--sumi); }
+.detail-key dt, .detail-key dd { font-size: 18px; font-weight: 800; color: inherit; }
+.detail-key dd { font-family: var(--font-ink); }
+.detail-sub { color: var(--muted); font-weight: 400; font-size: 14px; }
+.detail-empty, .detail-note { margin: 0; color: var(--sumi-soft); }
+.detail-note { font-style: italic; }
+.detail-table-wrap { overflow-x: auto; }
+.detail-lines { width: 100%; border-collapse: collapse; font-size: 15px; }
+.detail-lines th, .detail-lines td { padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--washi-deep); vertical-align: top; }
+.detail-lines thead th { font-size: 13px; color: var(--muted); font-weight: 700; }
+.detail-lines .num { text-align: right; white-space: nowrap; }
+.detail-lines tfoot th, .detail-lines tfoot td { border-top: 2px solid var(--sumi); border-bottom: 0; font-weight: 800; }
+.detail-lines tfoot td { font-family: var(--font-ink); font-size: 18px; }
 .slip-total {
   display: flex;
   align-items: baseline;
