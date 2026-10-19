@@ -28,15 +28,22 @@ export async function handleOrders(request, db, path, user) {
   let m = path.match(/^\/api\/orders\/([\w-]{1,64})$/);
   if (m) {
     const id = m[1];
+    // Tous les forgerons peuvent modifier ou supprimer une commande.
     if (request.method === "PUT") {
       await mustExist(db, id);
       const body = await readBody(request);
-      await db.prepare("UPDATE orders SET delivered_at = ? WHERE id = ?").bind(body.delivered ? Date.now() : null, id).run();
+      const stmts = [];
+      if (body.delivered !== undefined)
+        stmts.push(db.prepare("UPDATE orders SET delivered_at = ? WHERE id = ?").bind(body.delivered ? Date.now() : null, id));
+      if (body.client !== undefined)
+        stmts.push(db.prepare("UPDATE orders SET client = ? WHERE id = ?").bind(str(body.client, 60, "client", true), id));
+      if (body.note !== undefined) stmts.push(db.prepare("UPDATE orders SET note = ? WHERE id = ?").bind(str(body.note, 300, "remarque"), id));
+      if (body.lignes !== undefined) stmts.push(...(await replaceLines(db, id, body.lignes)));
+      if (stmts.length) await db.batch(stmts);
       return { data: await getOrder(db, id) };
     }
     if (request.method === "DELETE") {
-      const o = await mustExist(db, id);
-      if (o.created_by !== user) throw new Forbidden("Seul le forgeron qui a créé la commande peut la supprimer.");
+      await mustExist(db, id);
       await db.prepare("DELETE FROM orders WHERE id = ?").bind(id).run();
       return { data: null, status: 204 };
     }
@@ -76,9 +83,8 @@ export async function handleOrders(request, db, path, user) {
 
   m = path.match(/^\/api\/orders\/([\w-]{1,64})\/payments\/(\d{1,12})$/);
   if (m && request.method === "DELETE") {
-    const p = await db.prepare("SELECT by FROM order_payments WHERE id = ? AND order_id = ?").bind(Number(m[2]), m[1]).first();
+    const p = await db.prepare("SELECT id FROM order_payments WHERE id = ? AND order_id = ?").bind(Number(m[2]), m[1]).first();
     if (!p) throw new BadRequest("Ce versement n'existe pas.");
-    if (p.by !== user) throw new Forbidden("Tu ne peux retirer que les versements que tu as notés.");
     await db.prepare("DELETE FROM order_payments WHERE id = ?").bind(Number(m[2])).run();
     return { data: await getOrder(db, m[1]) };
   }
@@ -139,6 +145,33 @@ async function getOrder(db, id) {
     db.prepare("SELECT * FROM order_payments WHERE order_id = ? ORDER BY at").bind(id),
   ]);
   return assemble(o.results, l.results, p.results)[0] || null;
+}
+
+// Nouvelles lignes d'une commande : une ligne existante garde ses pièces déjà faites
+// (sans dépasser sa nouvelle quantité), une ligne retirée disparaît.
+async function replaceLines(db, orderId, input) {
+  if (!Array.isArray(input) || !input.length || input.length > 60) throw new BadRequest("Une commande doit contenir entre 1 et 60 lignes.");
+  const old = (await db.prepare("SELECT id, done FROM order_lines WHERE order_id = ?").bind(orderId).all()).results;
+  const doneById = new Map(old.map((l) => [l.id, l.done]));
+  const lignes = input.map((l) => {
+    const qty = int(l.qty, 1, 100000, "quantité");
+    const known = typeof l.id === "string" && doneById.has(l.id);
+    return {
+      id: known ? l.id : crypto.randomUUID(),
+      name: str(l.name, 100, "article", true),
+      qty,
+      unit: int(l.unit, 0, 1000000, "prix unitaire"),
+      done: known ? Math.min(qty, doneById.get(l.id)) : 0,
+    };
+  });
+  return [
+    db.prepare("DELETE FROM order_lines WHERE order_id = ?").bind(orderId),
+    ...lignes.map((l, i) =>
+      db
+        .prepare("INSERT INTO order_lines (id, order_id, name, qty, unit, done, position) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(l.id, orderId, l.name, l.qty, l.unit, l.done, i)
+    ),
+  ];
 }
 
 async function addOrder(db, body, user) {

@@ -100,7 +100,7 @@ async function readBody(request) {
 async function getPrices(db) {
   const [cats, items, meta, hist] = await db.batch([
     db.prepare("SELECT id, name, kanji, note, featured FROM categories ORDER BY position"),
-    db.prepare("SELECT id, category_id, name, price, note FROM items ORDER BY position"),
+    db.prepare("SELECT id, category_id, name, price, note, variants FROM items ORDER BY position"),
     db.prepare("SELECT key, value FROM meta WHERE key IN ('updated_at', 'updated_by')"),
     db.prepare("SELECT at, by, item, kind, old_price, new_price FROM price_history ORDER BY id DESC LIMIT 30"),
   ]);
@@ -116,7 +116,7 @@ async function getPrices(db) {
       featured: !!c.featured,
       items: items.results
         .filter((i) => i.category_id === c.id)
-        .map((i) => ({ id: i.id, name: i.name, price: i.price, note: i.note })),
+        .map((i) => ({ id: i.id, name: i.name, price: i.price, note: i.note, variants: i.variants })),
     })),
     history: hist.results,
   };
@@ -148,6 +148,12 @@ async function savePrices(db, body, by) {
           name: str(i.name, 80, "article", true),
           price: i.price === null || i.price === "" || i.price === undefined ? null : int(i.price, 0, 1000000, "prix"),
           note: str(i.note, 200, "remarque"),
+          // « Bleu, Noir ,Rouge » → « Bleu,Noir,Rouge »
+          variants: str(i.variants, 300, "coloris ou modèles")
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean)
+            .join(","),
         })),
     };
   });
@@ -176,8 +182,8 @@ async function savePrices(db, body, by) {
     c.items.forEach((i, ii) =>
       stmts.push(
         db
-          .prepare("INSERT INTO items (id, category_id, name, price, note, position) VALUES (?, ?, ?, ?, ?, ?)")
-          .bind(i.id, c.id, i.name, i.price, i.note, ii)
+          .prepare("INSERT INTO items (id, category_id, name, price, note, position, variants) VALUES (?, ?, ?, ?, ?, ?, ?)")
+          .bind(i.id, c.id, i.name, i.price, i.note, ii, i.variants)
       )
     );
   });

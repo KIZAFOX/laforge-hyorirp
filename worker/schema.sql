@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS items (
   name        TEXT NOT NULL,
   price       INTEGER,            -- NULL = prix pas encore fixé
   note        TEXT NOT NULL DEFAULT '',
-  position    INTEGER NOT NULL
+  position    INTEGER NOT NULL,
+  variants    TEXT NOT NULL DEFAULT '' -- coloris ou modèles, séparés par des virgules
 );
 
 CREATE TABLE IF NOT EXISTS meta (
@@ -62,22 +63,25 @@ INSERT OR IGNORE INTO categories (id, name, kanji, note, featured, position) VAL
   ('outils',   'Outils',   '道具', '', 0, 1),
   ('divers',   'Divers',   '雑貨', '', 0, 2);
 
-INSERT OR IGNORE INTO items (id, category_id, name, price, note, position) VALUES
-  ('armure-complete',     'samourai', 'Armure complète',               100,  '', 0),
-  ('piece-armure',        'samourai', 'Pièce d''armure (au choix)',     25,  '', 1),
-  ('katana',              'samourai', 'Katana',                         85,  '', 2),
-  ('reparation-samourai', 'samourai', 'Réparation',                     NULL, 'Prix pas encore fixé', 3),
-  ('outil-bien',          'outils',   'Outil (qualité bien ou moins)',  15,  '', 0),
-  ('outil-excellent',     'outils',   'Outil (qualité excellente)',     25,  '', 1),
-  ('reparation',          'outils',   'Réparation',                     15,  '', 2),
-  ('reparation-mineurs',  'outils',   'Réparation (mineurs)',            5,  'Tarif réservé aux mineurs', 3),
-  ('cadenas',             'divers',   'Cadenas',                        20,  '', 0),
-  ('couteau',             'divers',   'Couteau',                         5,  '', 1),
-  ('cisaille',            'divers',   'Cisaille',                        5,  '', 2),
-  ('chaudron',            'divers',   'Chaudron',                       25,  '', 3),
-  ('seau',                'divers',   'Seau',                            5,  '', 4);
--- Commandes : à lancer une fois sur la base en ligne (npm run db:commandes).
--- Sans risque si on le relance : les tables existantes ne sont pas touchées.
+INSERT OR IGNORE INTO items (id, category_id, name, price, note, position, variants) VALUES
+  ('armure-complete',     'samourai', 'Armure complète',               100,  '', 0, 'Bleu,Noir,Rouge,Brun'),
+  ('casque',              'samourai', 'Casque',                         25,  '', 1, 'Bleu,Noir,Rouge,Brun'),
+  ('plastron',            'samourai', 'Plastron',                       25,  '', 2, 'Bleu,Noir,Rouge,Brun'),
+  ('jambieres',           'samourai', 'Jambières',                      25,  '', 3, 'Bleu,Noir,Rouge,Brun'),
+  ('bottes',              'samourai', 'Bottes',                         25,  '', 4, 'Bleu,Noir,Rouge,Brun'),
+  ('katana',              'samourai', 'Katana',                         85,  '', 5, 'Neon Blade,Black Ice'),
+  ('reparation-samourai', 'samourai', 'Réparation',                     NULL, 'Prix pas encore fixé', 6, ''),
+  ('outil-bien',          'outils',   'Outil (qualité bien ou moins)',  15,  '', 0, ''),
+  ('outil-excellent',     'outils',   'Outil (qualité excellente)',     25,  '', 1, ''),
+  ('reparation',          'outils',   'Réparation',                     15,  '', 2, ''),
+  ('reparation-mineurs',  'outils',   'Réparation (mineurs)',            5,  'Tarif réservé aux mineurs', 3, ''),
+  ('cadenas',             'divers',   'Cadenas',                        20,  '', 0, ''),
+  ('couteau',             'divers',   'Couteau',                         5,  '', 1, ''),
+  ('cisaille',            'divers',   'Cisaille',                        5,  '', 2, ''),
+  ('chaudron',            'divers',   'Chaudron',                       25,  '', 3, ''),
+  ('seau',                'divers',   'Seau',                            5,  '', 4, '');
+
+-- Commandes
 
 CREATE TABLE IF NOT EXISTS orders (
   id           TEXT PRIMARY KEY,
