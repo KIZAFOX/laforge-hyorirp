@@ -914,3 +914,12 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 @media (max-width: 640px) {
   .edit-variants { grid-column: 1 / -1; }
 }
+
+/* Tributs : une seule barre (pas de paiement), elle prend toute la largeur */
+.order-bars:has(> .order-bar:only-child) { grid-template-columns: 1fr; }
+
+/* Cinq pages dans le menu : sur téléphone, les liens passent sur deux lignes si besoin */
+@media (max-width: 640px) {
+  .nav { flex-wrap: wrap; justify-content: flex-start; column-gap: 2px; }
+  .nav a { padding: 0 8px; }
+}

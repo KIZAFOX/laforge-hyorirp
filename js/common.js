@@ -85,6 +85,7 @@
           <a href="index.html" ${active === "prix" ? 'aria-current="page"' : ""}>Prix</a>
           <a href="registre.html" ${active === "registre" ? 'aria-current="page"' : ""}>Registre</a>
           <a href="commandes.html" ${active === "commandes" ? 'aria-current="page"' : ""}>Commandes</a>
+          <a href="tributs.html" ${active === "tributs" ? 'aria-current="page"' : ""}>Tributs</a>
           <a href="clients.html" ${active === "clients" ? 'aria-current="page"' : ""}>Clients</a>
         </nav>
         <div class="account-box" id="account-box"></div>
@@ -301,7 +302,8 @@
       return c;
     };
     (sales || []).forEach((s) => get(s.client, s.date)?.sales.push(s));
-    (orders || []).forEach((o) => get(o.client, o.createdAt)?.orders.push(o));
+    // Un tribut est dû au village : ce n'est pas un client.
+    (orders || []).filter((o) => o.kind !== "tribut").forEach((o) => get(o.client, o.createdAt)?.orders.push(o));
     // Nom affiché : l'orthographe la plus utilisée ; à égalité, « Kenji » plutôt que « KENJI » ou « kenji ».
     const tidy = (s) => (/^\p{Lu}/u.test(s) && s !== s.toLocaleUpperCase("fr") ? 1 : 0);
     for (const c of map.values()) {

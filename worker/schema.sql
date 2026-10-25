@@ -61,25 +61,30 @@ CREATE INDEX IF NOT EXISTS sale_lines_sale ON sale_lines(sale_id);
 INSERT OR IGNORE INTO categories (id, name, kanji, note, featured, position) VALUES
   ('samourai', 'Samouraï', '侍', 'Réservé aux samouraïs, qualité excellente uniquement.', 1, 0),
   ('outils',   'Outils',   '道具', '', 0, 1),
-  ('divers',   'Divers',   '雑貨', '', 0, 2);
+  ('derouillage', 'Dérouillage au vernis', '錆落とし', 'Une touche de vernis par niveau de rouille. Un outil tranchant n''a pas besoin de vernis.', 0, 2),
+  ('divers',   'Divers',   '雑貨', '', 0, 3);
 
 INSERT OR IGNORE INTO items (id, category_id, name, price, note, position, variants) VALUES
-  ('armure-complete',     'samourai', 'Armure complète',               100,  '', 0, 'Bleu,Noir,Rouge,Brun'),
-  ('casque',              'samourai', 'Casque',                         25,  '', 1, 'Bleu,Noir,Rouge,Brun'),
-  ('plastron',            'samourai', 'Plastron',                       25,  '', 2, 'Bleu,Noir,Rouge,Brun'),
-  ('jambieres',           'samourai', 'Jambières',                      25,  '', 3, 'Bleu,Noir,Rouge,Brun'),
-  ('bottes',              'samourai', 'Bottes',                         25,  '', 4, 'Bleu,Noir,Rouge,Brun'),
-  ('katana',              'samourai', 'Katana',                         85,  '', 5, 'Neon Blade,Black Ice'),
+  ('armure-complete',     'samourai', 'Armure complète',               100,  '', 0, 'Bleu,Noir,Rouge,Brun,Blanc'),
+  ('casque',              'samourai', 'Casque',                         25,  '', 1, 'Bleu,Noir,Rouge,Brun,Blanc'),
+  ('plastron',            'samourai', 'Plastron',                       25,  '', 2, 'Bleu,Noir,Rouge,Brun,Blanc'),
+  ('jambieres',           'samourai', 'Jambières',                      25,  '', 3, 'Bleu,Noir,Rouge,Brun,Blanc'),
+  ('bottes',              'samourai', 'Bottes',                         25,  '', 4, 'Bleu,Noir,Rouge,Brun,Blanc'),
+  ('katana',              'samourai', 'Katana',                         85,  '', 5, 'Neon Blade,Black Ice,Swift Sheet'),
   ('reparation-samourai', 'samourai', 'Réparation',                     NULL, 'Prix pas encore fixé', 6, ''),
   ('outil-bien',          'outils',   'Outil (qualité bien ou moins)',  15,  '', 0, ''),
   ('outil-excellent',     'outils',   'Outil (qualité excellente)',     25,  '', 1, ''),
   ('reparation',          'outils',   'Réparation',                     15,  '', 2, ''),
   ('reparation-mineurs',  'outils',   'Réparation (mineurs)',            5,  'Tarif réservé aux mineurs', 3, ''),
-  ('cadenas',             'divers',   'Cadenas',                        20,  '', 0, ''),
+  ('vernis-emousse',      'derouillage', 'Émoussé',                     30,  '1 touche de vernis', 0, ''),
+  ('vernis-rouille',      'derouillage', 'Fortement rouillé',           50,  '2 touches de vernis', 1, ''),
+  ('vernis-critique',     'derouillage', 'Rouille critique',            70,  '3 touches de vernis', 2, ''),
+  ('cadenas',            'divers',   'Cadenas',                        20,  '', 0, ''),
   ('couteau',             'divers',   'Couteau',                         5,  '', 1, ''),
   ('cisaille',            'divers',   'Cisaille',                        5,  '', 2, ''),
-  ('chaudron',            'divers',   'Chaudron',                       25,  '', 3, ''),
-  ('seau',                'divers',   'Seau',                            5,  '', 4, '');
+  ('trousseau-cles',      'divers',   'Trousseau de clés',              10,  '', 3, ''),
+  ('chaudron',            'divers',   'Chaudron',                       25,  '', 4, ''),
+  ('seau',                'divers',   'Seau',                            5,  '', 5, '');
 
 -- Commandes
 
@@ -89,7 +94,8 @@ CREATE TABLE IF NOT EXISTS orders (
   created_by   TEXT NOT NULL,
   client       TEXT NOT NULL,
   note         TEXT NOT NULL DEFAULT '',
-  delivered_at INTEGER              -- NULL = pas encore livrée
+  delivered_at INTEGER,             -- NULL = pas encore livrée
+  kind         TEXT NOT NULL DEFAULT 'commande' -- 'commande' (client) ou 'tribut' (dû au village)
 );
 CREATE INDEX IF NOT EXISTS orders_created ON orders(created_at DESC);
 

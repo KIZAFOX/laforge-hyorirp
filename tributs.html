@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tributs | Hyori RP</title>
+  <link rel="icon" href="img/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=9" />
+</head>
+<body data-kind="tribut">
+  <header class="topbar" id="topbar"></header>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Les tributs</h1>
+        <p class="lede">Ce que la forge doit remettre au village : on coche les pièces faites au fur et à mesure, puis on marque le tribut comme remis.</p>
+      </div>
+      <span class="vertical-mark" lang="ja" aria-hidden="true">年貢</span>
+    </div>
+
+    <div class="orders-bar">
+      <div class="tabs" role="group" aria-label="Filtrer les tributs" id="tabs">
+        <button type="button" class="tab" data-filter="cours" aria-pressed="true">En cours</button>
+        <button type="button" class="tab" data-filter="livree" aria-pressed="false">Remis</button>
+        <button type="button" class="tab" data-filter="toutes" aria-pressed="false">Tous</button>
+      </div>
+      <div class="field field-grow">
+        <label for="o-search" class="sr-only">Rechercher un tribut</label>
+        <input id="o-search" type="search" placeholder="Rechercher un destinataire ou un article" />
+      </div>
+      <button type="button" class="btn btn-primary" id="new-order">Nouveau tribut</button>
+    </div>
+
+    <div id="orders"></div>
+  </main>
+
+  <datalist id="item-names"></datalist>
+
+  <script src="js/config.js?v=9"></script>
+  <script src="js/store.js?v=9"></script>
+  <script src="js/common.js?v=9"></script>
+  <script src="js/commandes.js?v=9"></script>
+</body>
+</html>

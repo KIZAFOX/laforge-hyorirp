@@ -1,7 +1,69 @@
 (function () {
   const { esc, fmtDate, amount, amountText, seal } = UI;
   const store = Store.create();
-  UI.init("commandes", store);
+
+  // La même page sert aux commandes des clients et aux tributs dus au village
+  // (tributs.html a <body data-kind="tribut">). Un tribut ne se paie pas.
+  const KIND = document.body.dataset.kind === "tribut" ? "tribut" : "commande";
+  const T = KIND === "tribut";
+  const W = T
+    ? {
+        loading: "Ouverture du registre des tributs…",
+        loadError: "Les tributs n'ont pas pu être chargés.",
+        emptyAll: "Aucun tribut pour l'instant. Utilise « Nouveau tribut » pour en inscrire un.",
+        emptyDone: "Aucun tribut remis pour l'instant.",
+        emptyOpen: "Aucun tribut en cours : tout a été remis au village.",
+        emptySearch: "Aucun tribut ne correspond à cette recherche.",
+        tabs: { cours: "En cours", livree: "Remis", toutes: "Tous" },
+        follow: "Suivre le tribut",
+        newTitle: "Nouveau tribut",
+        editTitle: (c) => `Modifier le tribut pour ${esc(c)}`,
+        who: "Destinataire",
+        whoHint: "ex : Village des mines",
+        detailTitle: (c) => `Tribut pour ${esc(c)}`,
+        deliveredOn: "Remis au village le",
+        notDelivered: "Pas encore remis au village.",
+        deliveryTitle: "Remise au village",
+        deliver: "Marquer comme remis",
+        delivered: "Tribut marqué comme remis",
+        reopened: "Tribut remis en cours",
+        delete: "Supprimer le tribut",
+        confirmDelete: (c) => `Supprimer le tribut pour ${c} ? Le suivi sera perdu.`,
+        deleted: "Tribut supprimé",
+        created: (c) => `Tribut pour ${c} créé`,
+        edited: (c) => `Tribut pour ${c} modifié`,
+        move: "Déplacer vers les commandes",
+        moved: "Déplacé vers les commandes",
+      }
+    : {
+        loading: "Ouverture du carnet de commandes…",
+        loadError: "Les commandes n'ont pas pu être chargées.",
+        emptyAll: "Aucune commande pour l'instant. Utilise « Nouvelle commande » pour en inscrire une.",
+        emptyDone: "Aucune commande livrée pour l'instant.",
+        emptyOpen: "Aucune commande en cours : tout a été livré.",
+        emptySearch: "Aucune commande ne correspond à cette recherche.",
+        tabs: { cours: "En cours", livree: "Livrées", toutes: "Toutes" },
+        follow: "Suivre la commande",
+        newTitle: "Nouvelle commande",
+        editTitle: (c) => `Modifier la commande de ${esc(c)}`,
+        who: "Client",
+        whoHint: "Pour qui est la commande",
+        detailTitle: (c) => `Commande de ${UI.clientLink(c)}`,
+        deliveredOn: "Livrée le",
+        notDelivered: "Pas encore livrée.",
+        deliveryTitle: "Livraison",
+        deliver: "Marquer comme livrée",
+        delivered: "Commande marquée comme livrée",
+        reopened: "Commande remise en cours",
+        delete: "Supprimer la commande",
+        confirmDelete: (c) => `Supprimer la commande de ${c} ? Le suivi et les versements notés seront perdus.`,
+        deleted: "Commande supprimée",
+        created: (c) => `Commande de ${c} créée`,
+        edited: (c) => `Commande de ${c} modifiée`,
+        move: "Déplacer vers les tributs",
+        moved: "Déplacée vers les tributs",
+      };
+  UI.init(T ? "tributs" : "commandes", store);
 
   const $ = (id) => document.getElementById(id);
   const listEl = $("orders");
@@ -21,8 +83,9 @@
   const pct = (part, whole) => (whole ? Math.min(100, Math.floor((part / whole) * 100)) : 100);
 
   function status(o) {
-    if (o.deliveredAt) return { key: "livree", label: `Livrée le ${fmtDate(o.deliveredAt)}` };
+    if (o.deliveredAt) return { key: "livree", label: `${W.deliveredOn} ${fmtDate(o.deliveredAt)}` };
     const made = doneOf(o) >= piecesOf(o);
+    if (T) return made ? { key: "prete", label: "Prêt à remettre au village" } : { key: "cours", label: "En fabrication" };
     const paid = paidOf(o) >= totalOf(o);
     if (made && paid) return { key: "prete", label: "Prête et payée, à livrer" };
     if (made) return { key: "prete", label: "Prête, paiement en attente" };
@@ -50,7 +113,7 @@
       n.toutes++;
       n[o.deliveredAt ? "livree" : "cours"]++;
     });
-    const names = { cours: "En cours", livree: "Livrées", toutes: "Toutes" };
+    const names = W.tabs;
     $("tabs")
       .querySelectorAll(".tab")
       .forEach((t) => {
@@ -62,13 +125,13 @@
   function renderList() {
     renderTabs();
     if (!orders && !ordersError) {
-      listEl.innerHTML = '<p class="state" role="status">Ouverture du carnet de commandes…</p>';
+      listEl.innerHTML = `<p class="state" role="status">${W.loading}</p>`;
       return;
     }
     if (!orders) {
       listEl.innerHTML = `
         <div class="state state-error" role="alert">
-          <p>Les commandes n'ont pas pu être chargées. ${esc(ordersError.message)}</p>
+          <p>${W.loadError} ${esc(ordersError.message)}</p>
           <button class="btn" data-retry>Réessayer</button>
         </div>`;
       return;
@@ -77,12 +140,12 @@
     const list = visible();
     if (!list.length) {
       const empty = !orders.length
-        ? "Aucune commande pour l'instant. Utilise « Nouvelle commande » pour en inscrire une."
+        ? W.emptyAll
         : filter === "livree" && !$("o-search").value
-        ? "Aucune commande livrée pour l'instant."
+        ? W.emptyDone
         : filter === "cours" && !$("o-search").value
-        ? "Aucune commande en cours : tout a été livré."
-        : "Aucune commande ne correspond à cette recherche.";
+        ? W.emptyOpen
+        : W.emptySearch;
       listEl.innerHTML = warn + `<p class="state">${empty}</p>`;
       return;
     }
@@ -102,7 +165,7 @@
           <li class="order order-${st.key}" data-order="${esc(o.id)}">
             <div class="order-top">
               <div class="order-who">
-                <h2>${UI.clientLink(o.client)}</h2>
+                <h2>${T ? esc(o.client) : UI.clientLink(o.client)}</h2>
                 <p class="meta">${seal(o.createdBy)} Créée le ${fmtDate(o.createdAt)} par <strong>${esc(o.createdBy)}</strong></p>
               </div>
               <div class="order-total">
@@ -116,13 +179,17 @@
                 <p><span>Fabrication</span><strong>${pMade} %</strong><span class="meta">${made} / ${pieces} pièces</span></p>
                 ${bar(pMade, `Fabrication : ${pMade} %`)}
               </div>
-              <div class="order-bar">
+              ${
+                T
+                  ? ""
+                  : `<div class="order-bar">
                 <p><span>Paiement</span><strong>${pPaid} %</strong><span class="meta">${amountText(paid)} sur ${amountText(total)}</span></p>
                 ${bar(pPaid, `Paiement : ${pPaid} %`, "pay")}
-              </div>
+              </div>`
+              }
             </div>
             <div class="order-actions">
-              <button class="btn" data-open="${esc(o.id)}" aria-label="Suivre la commande de ${esc(o.client)}">Suivre la commande</button>
+              <button class="btn" data-open="${esc(o.id)}" aria-label="${W.follow} : ${esc(o.client)}">${W.follow}</button>
             </div>
           </li>`;
         })
@@ -190,11 +257,11 @@
     }
     dlg.innerHTML = `
       <form class="detail" id="new-form" novalidate>
-        <h2 id="new-title">${editing ? `Modifier la commande de ${esc(editing.client)}` : "Nouvelle commande"}</h2>
+        <h2 id="new-title">${editing ? W.editTitle(editing.client) : W.newTitle}</h2>
         ${editing ? `<p class="detail-empty">Les pièces déjà faites et les versements notés sont conservés.</p>` : ""}
         <div class="field">
-          <label for="n-client">Client</label>
-          <input id="n-client" maxlength="60" required placeholder="Pour qui est la commande" autocomplete="off" />
+          <label for="n-client">${W.who}</label>
+          <input id="n-client" maxlength="60" required placeholder="${W.whoHint}" autocomplete="off" />
           <p class="client-hint" id="n-client-hint" aria-live="polite" hidden></p>
         </div>
         <fieldset class="lines-set">
@@ -204,7 +271,7 @@
           <button type="button" class="btn btn-quiet" data-add-line>Ajouter une ligne</button>
         </fieldset>
         <div class="slip-total"><span>Total de la commande</span><strong id="n-total">0</strong></div>
-        ${editing ? "" : `<fieldset class="pay-set">
+        ${editing || T ? "" : `<fieldset class="pay-set">
           <legend>Déjà payé à la commande <span class="optional">(facultatif)</span></legend>
           <label class="check"><input type="checkbox" id="n-full" /> Payée en entier dès maintenant</label>
           <div class="pay-grid">
@@ -219,7 +286,7 @@
         <p class="form-error" id="n-error" role="alert" hidden></p>
         <div class="row-end">
           <button type="button" class="btn btn-quiet" data-cancel>Annuler</button>
-          <button class="btn btn-primary" type="submit">${editing ? "Enregistrer les modifications" : "Créer la commande"}</button>
+          <button class="btn btn-primary" type="submit">${editing ? "Enregistrer les modifications" : T ? "Créer le tribut" : "Créer la commande"}</button>
         </div>
       </form>`;
     if (editing) {
@@ -227,7 +294,9 @@
       $("n-note").value = editing.note || "";
     }
     renderNewLines();
-    UI.clientField($("n-client"), $("n-client-hint"), knownClients).refresh();
+    if (T) {
+      if (!editing) $("n-client").value = "Village des mines";
+    } else UI.clientField($("n-client"), $("n-client-hint"), knownClients).refresh();
     dlg.showModal();
     $("n-client").focus();
   }
@@ -324,7 +393,7 @@
       err.hidden = true;
       const client = $("n-client").value.trim();
       const lignes = draft.lignes.filter((l) => l.name.trim());
-      if (!client) return show("Indique le nom du client.", $("n-client"));
+      if (!client) return show(T ? "Indique à qui le tribut est dû." : "Indique le nom du client.", $("n-client"));
       if (!lignes.length) return show("Ajoute au moins une pièce à fabriquer.", dlg.querySelector('[data-i="0"]'));
       if (lignes.some((l) => num(l.qty) < 1)) return show("Chaque quantité doit être d'au moins 1.");
       const btn = dlg.querySelector('button[type="submit"]');
@@ -343,7 +412,7 @@
           dlg.close();
           renderList();
           if (openId === o.id) renderDetail("edit");
-          UI.toast(`Commande de ${o.client} modifiée`);
+          UI.toast(W.edited(o.client));
         } catch (ex) {
           show("Les modifications n'ont pas été enregistrées. " + ex.message);
           btn.disabled = false;
@@ -357,19 +426,20 @@
           store.addOrder({
             client,
             note: $("n-note").value.trim(),
+            kind: KIND,
             lignes: lignes.map((l) => ({ name: l.name.trim(), qty: num(l.qty), unit: num(l.unit) })),
-            paiement: { argent: num($("n-argent").value), cuivre: num($("n-cuivre").value) },
+            paiement: T ? {} : { argent: num($("n-argent").value), cuivre: num($("n-cuivre").value) },
           })
         );
         orders = [o, ...(orders || [])];
         filter = "cours";
         dlg.close();
         renderList();
-        UI.toast(`Commande de ${o.client} créée`);
+        UI.toast(W.created(o.client));
       } catch (ex) {
-        show("La commande n'a pas été créée. " + ex.message);
+        show((T ? "Le tribut n'a pas été créé. " : "La commande n'a pas été créée. ") + ex.message);
         btn.disabled = false;
-        btn.textContent = "Créer la commande";
+        btn.textContent = T ? "Créer le tribut" : "Créer la commande";
       }
     });
   }
@@ -423,7 +493,7 @@
         <div class="detail-head">
           ${seal(o.createdBy)}
           <div>
-            <h2 id="od-title">Commande de ${UI.clientLink(o.client)}</h2>
+            <h2 id="od-title">${W.detailTitle(o.client)}</h2>
             <p class="meta">Créée le ${fmtDate(o.createdAt)} par ${esc(o.createdBy)} · ${esc(st.label)}</p>
           </div>
         </div>
@@ -458,6 +528,12 @@
             .join("")}
         </ul>
 
+        ${
+          T
+            ? `<h3>Valeur du tribut</h3>
+        <dl class="detail-dl"><div class="detail-key"><dt>Valeur des pièces au prix de la forge</dt><dd>${amount(total)}</dd></div></dl>
+        ${o.paiements.length ? `<p class="detail-empty">Versements notés quand c'était une commande : ${amountText(paid)}.</p>` : ""}`
+            : `
         <h3>Paiement <span class="h3-side">${pPaid} %</span></h3>
         ${bar(pPaid, `Paiement : ${pPaid} %`, "pay")}
         <dl class="detail-dl">
@@ -502,15 +578,17 @@
           </div>
         </form>`
             : ""
+        }`
         }
 
-        <h3>Livraison</h3>
-        <p class="detail-empty">${o.deliveredAt ? `Livrée le ${fmtDate(o.deliveredAt)}.` : "Pas encore livrée."}</p>
+        <h3>${W.deliveryTitle}</h3>
+        <p class="detail-empty">${o.deliveredAt ? `${W.deliveredOn} ${fmtDate(o.deliveredAt)}.` : W.notDelivered}</p>
 
         <div class="row-end row-wrap">
-          <button type="button" class="btn btn-quiet btn-danger" data-del-order>Supprimer la commande</button>
-          <button type="button" class="btn" data-edit data-key="edit">Modifier la commande</button>
-          <button type="button" class="btn" data-deliver data-key="deliver">${o.deliveredAt ? "Remettre en cours" : "Marquer comme livrée"}</button>
+          <button type="button" class="btn btn-quiet btn-danger" data-del-order>${W.delete}</button>
+          <button type="button" class="btn btn-quiet" data-move data-key="move">${W.move}</button>
+          <button type="button" class="btn" data-edit data-key="edit">${T ? "Modifier le tribut" : "Modifier la commande"}</button>
+          <button type="button" class="btn" data-deliver data-key="deliver">${o.deliveredAt ? "Remettre en cours" : W.deliver}</button>
           <button type="button" class="btn btn-primary" data-close>Fermer</button>
         </div>
       </div>`;
@@ -576,18 +654,32 @@
       }
       if (e.target.closest("[data-deliver]")) {
         return send(() => store.updateOrder(o.id, { delivered: !o.deliveredAt }), "deliver").then(() =>
-          UI.toast(o.deliveredAt ? "Commande remise en cours" : "Commande marquée comme livrée")
+          UI.toast(o.deliveredAt ? W.reopened : W.delivered)
         );
       }
       if (e.target.closest("[data-edit]")) return openNew(o);
+      // Passe une commande dans les tributs (ou l'inverse) : elle quitte cette page.
+      if (e.target.closest("[data-move]")) {
+        try {
+          await UI.run(() => store.updateOrder(o.id, { kind: T ? "commande" : "tribut" }));
+          orders = orders.filter((x) => x.id !== o.id);
+          returnTo = $("new-order");
+          dlg.close();
+          renderList();
+          UI.toast(W.moved);
+        } catch (err) {
+          alert("Le transfert n'a pas été fait. " + err.message);
+        }
+        return;
+      }
       if (e.target.closest("[data-del-order]")) {
-        if (!confirm(`Supprimer la commande de ${o.client} ? Le suivi et les versements notés seront perdus.`)) return;
+        if (!confirm(W.confirmDelete(o.client))) return;
         try {
           await UI.run(() => store.deleteOrder(o.id));
           orders = orders.filter((x) => x.id !== o.id);
           dlg.close();
           renderList();
-          UI.toast("Commande supprimée");
+          UI.toast(W.deleted);
           $("new-order").focus();
         } catch (err) {
           alert("La commande n'a pas été supprimée. " + err.message);
@@ -632,7 +724,7 @@
   // ---------- Chargement ----------
   async function load() {
     try {
-      orders = await UI.run(() => store.getOrders());
+      orders = (await UI.run(() => store.getOrders())).filter((o) => (o.kind || "commande") === KIND);
       ordersError = null;
     } catch (e) {
       ordersError = e;

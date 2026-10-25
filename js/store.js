@@ -12,12 +12,12 @@
         note: "Réservé aux samouraïs, qualité excellente uniquement.",
         featured: true,
         items: [
-          { id: "armure-complete", name: "Armure complète", price: 100, note: "", variants: "Bleu,Noir,Rouge,Brun" },
-          { id: "casque", name: "Casque", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
-          { id: "plastron", name: "Plastron", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
-          { id: "jambieres", name: "Jambières", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
-          { id: "bottes", name: "Bottes", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun" },
-          { id: "katana", name: "Katana", price: 85, note: "", variants: "Neon Blade,Black Ice" },
+          { id: "armure-complete", name: "Armure complète", price: 100, note: "", variants: "Bleu,Noir,Rouge,Brun,Blanc" },
+          { id: "casque", name: "Casque", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun,Blanc" },
+          { id: "plastron", name: "Plastron", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun,Blanc" },
+          { id: "jambieres", name: "Jambières", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun,Blanc" },
+          { id: "bottes", name: "Bottes", price: 25, note: "", variants: "Bleu,Noir,Rouge,Brun,Blanc" },
+          { id: "katana", name: "Katana", price: 85, note: "", variants: "Neon Blade,Black Ice,Swift Sheet" },
           { id: "reparation-samourai", name: "Réparation", price: null, note: "Prix pas encore fixé" },
         ],
       },
@@ -35,6 +35,18 @@
         ],
       },
       {
+        id: "derouillage",
+        name: "Dérouillage au vernis",
+        kanji: "錆落とし",
+        note: "Une touche de vernis par niveau de rouille. Un outil tranchant n'a pas besoin de vernis.",
+        featured: false,
+        items: [
+          { id: "vernis-emousse", name: "Émoussé", price: 30, note: "1 touche de vernis" },
+          { id: "vernis-rouille", name: "Fortement rouillé", price: 50, note: "2 touches de vernis" },
+          { id: "vernis-critique", name: "Rouille critique", price: 70, note: "3 touches de vernis" },
+        ],
+      },
+      {
         id: "divers",
         name: "Divers",
         kanji: "雑貨",
@@ -44,6 +56,7 @@
           { id: "cadenas", name: "Cadenas", price: 20, note: "" },
           { id: "couteau", name: "Couteau", price: 5, note: "" },
           { id: "cisaille", name: "Cisaille", price: 5, note: "" },
+          { id: "trousseau-cles", name: "Trousseau de clés", price: 10, note: "" },
           { id: "chaudron", name: "Chaudron", price: 25, note: "" },
           { id: "seau", name: "Seau", price: 5, note: "" },
         ],
@@ -165,6 +178,7 @@
           client: o.client,
           note: o.note || "",
           deliveredAt: null,
+          kind: o.kind || "commande",
           lignes: o.lignes.map((l) => ({ ...l, id: uid(), done: 0 })),
           paiements: [],
         };
@@ -179,6 +193,7 @@
           if (change.delivered !== undefined) o.deliveredAt = change.delivered ? Date.now() : null;
           if (change.client !== undefined) o.client = change.client;
           if (change.note !== undefined) o.note = change.note;
+          if (change.kind !== undefined) o.kind = change.kind;
           if (change.lignes) {
             const done = new Map(o.lignes.map((l) => [l.id, l.done]));
             o.lignes = change.lignes.map((l) => ({

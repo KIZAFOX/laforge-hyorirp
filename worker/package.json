@@ -9,6 +9,7 @@
     "db:paiement": "wrangler d1 execute laforge --remote --file=migrations/001-paiement.sql",
     "db:commandes": "wrangler d1 execute laforge --remote --file=migrations/002-commandes.sql",
     "db:variantes": "wrangler d1 execute laforge --remote --file=migrations/003-variantes.sql",
+    "db:tributs": "wrangler d1 execute laforge --remote --file=migrations/004-tributs.sql",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

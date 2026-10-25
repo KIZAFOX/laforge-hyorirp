@@ -16,6 +16,12 @@ const int = (v, min, max, field) => {
   return n;
 };
 
+// Commande d'un client, ou tribut dû au village
+const kindOf = (v) => {
+  if (v !== "commande" && v !== "tribut") throw new BadRequest("Type de commande inconnu.");
+  return v;
+};
+
 const coins = (v, field) => (v === undefined || v === null || v === "" ? 0 : int(v, 0, 1000000, field));
 
 // Routes /api/orders… ; renvoie null si la route ne concerne pas les commandes.
@@ -38,6 +44,7 @@ export async function handleOrders(request, db, path, user) {
       if (body.client !== undefined)
         stmts.push(db.prepare("UPDATE orders SET client = ? WHERE id = ?").bind(str(body.client, 60, "client", true), id));
       if (body.note !== undefined) stmts.push(db.prepare("UPDATE orders SET note = ? WHERE id = ?").bind(str(body.note, 300, "remarque"), id));
+      if (body.kind !== undefined) stmts.push(db.prepare("UPDATE orders SET kind = ? WHERE id = ?").bind(kindOf(body.kind), id));
       if (body.lignes !== undefined) stmts.push(...(await replaceLines(db, id, body.lignes)));
       if (stmts.length) await db.batch(stmts);
       return { data: await getOrder(db, id) };
@@ -124,6 +131,7 @@ function assemble(orders, lines, payments) {
     client: o.client,
     note: o.note,
     deliveredAt: o.delivered_at,
+    kind: o.kind || "commande",
     lignes: (L.get(o.id) || []).map(({ id, name, qty, unit, done }) => ({ id, name, qty, unit, done })),
     paiements: (P.get(o.id) || []).map(({ id, at, by, argent, cuivre, note }) => ({ id, at, by, argent, cuivre, note })),
   }));
@@ -192,7 +200,9 @@ async function addOrder(db, body, user) {
   const cuivre = coins(p.cuivre, "pièces de cuivre");
 
   const stmts = [
-    db.prepare("INSERT INTO orders (id, created_at, created_by, client, note) VALUES (?, ?, ?, ?, ?)").bind(id, now, user, client, note),
+    db
+      .prepare("INSERT INTO orders (id, created_at, created_by, client, note, kind) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(id, now, user, client, note, kindOf(body.kind || "commande")),
     ...lignes.map((l, i) =>
       db
         .prepare("INSERT INTO order_lines (id, order_id, name, qty, unit, done, position) VALUES (?, ?, ?, ?, ?, 0, ?)")
